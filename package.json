@@ -1,0 +1,55 @@
+{
+  "name": "rif-scheduler-services",
+  "version": "1.0.0",
+  "description": "<p align=\"middle\">\r     <img src=\"https://www.rifos.org/assets/img/logo.svg\" alt=\"logo\" height=\"100\" >\r </p>\r <h3 align=\"middle\">RIF Scheduler services</h3>\r <p align=\"middle\">\r     Schedule RSK transactions\r </p>",
+  "main": "lib/index.js",
+  "types": "lib",
+  "scripts": {
+    "start": "nodemon",
+    "test": "npx jest src/*/* --verbose --coverage --collectCoverageFrom=src/*/*",
+    "test:watch": "npx jest src/*/* --verbose --detectOpenHandles --coverage --collectCoverageFrom=src/*/* --watch",
+    "test:dev": "npx jest src/*/* --verbose --watch",
+    "build": "rimraf ./lib && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rsksmart/rif-scheduler-services.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rsksmart/rif-scheduler-services/issues"
+  },
+  "homepage": "https://github.com/rsksmart/rif-scheduler-services#readme",
+  "dependencies": {
+    "date-fns": "^2.20.3",
+    "sqlite3": "^5.0.2",
+    "typeorm": "^0.2.32",
+    "web3": "^1.3.5",
+    "web3-eth-contract": "^1.3.5",
+    "web3-utils": "^1.3.5"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.22",
+    "@types/node": "^14.14.37",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "eslint": "^7.24.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jest": "^24.3.5",
+    "eslint-plugin-json": "^2.1.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-standard": "^5.0.0",
+    "ganache-cli": "^6.12.2",
+    "jest": "^26.6.3",
+    "jest-junit": "^12.0.0",
+    "nodemon": "^2.0.7",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^26.5.4",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
+  }
+}
