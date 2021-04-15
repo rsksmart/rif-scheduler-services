@@ -3,7 +3,9 @@ import { AbiItem } from "web3-utils";
 import OneShotScheduleData from "../contract/OneShotSchedule.json";
 
 export interface IProvider {
-  getPastMetatransactionAddedEvents(): Promise<void>;
+  getPastMetatransactionAddedEvents(
+    startFromBlock?: number
+  ): Promise<IMetatransactionAddedValues[]>;
   listenNewMetatransactionAddedEvent(
     callback: (eventValues: IMetatransactionAddedValues) => Promise<void>
   ): Promise<void>;
@@ -16,6 +18,7 @@ export interface IMetatransactionAddedValues {
   gas: number;
   timestamp: Date;
   value: string;
+  blockNumber: number;
 }
 
 const ESTIMATED_BLOCKS_BY_DAY = 6500;
@@ -35,26 +38,29 @@ class Provider implements IProvider {
     );
   }
 
-  async getPastMetatransactionAddedEvents() {
-    const currentBlockNumber = await this.web3.eth.getBlockNumber();
+  async getPastMetatransactionAddedEvents(startFromBlock?: number) {
+    let initialBlockNumber = startFromBlock;
+
+    if (!initialBlockNumber)
+      initialBlockNumber =
+        (await this.web3.eth.getBlockNumber()) - ESTIMATED_BLOCKS_BY_DAY * 2;
 
     const result = await this.oneShotScheduleContract.getPastEvents(
       "MetatransactionAdded",
       {
-        fromBlock: currentBlockNumber - ESTIMATED_BLOCKS_BY_DAY * 2,
+        fromBlock: initialBlockNumber,
         toBlock: "latest",
       }
     );
 
-    console.log("result", result);
-
-    return result.map(({ returnValues }) => ({
+    return result.map(({ returnValues, blockNumber }) => ({
       index: +returnValues.index,
       to: returnValues.to,
       data: returnValues.data,
       gas: +returnValues.gas,
       timestamp: new Date(+returnValues.timestamp * 1000),
       value: returnValues.value,
+      blockNumber,
     }));
   }
 

@@ -1,12 +1,27 @@
+import {
+  deleteDatabase,
+  resetDatabase,
+  createSqliteConnection,
+} from "../cache/db";
+import { getConnection, Repository } from "typeorm";
+import {
+  ScheduledTransaction,
+  ScheduledTransactionStatus,
+} from "../cache/entities";
+import Cache, { ICache } from "../cache";
+import { addMinutes, compareAsc } from "date-fns";
 import Web3 from "web3";
 import { Contract } from "web3-eth-contract";
 import { AbiItem } from "web3-utils";
-import Provider from "./index";
 import OneShotScheduleData from "../contract/OneShotSchedule.json";
+import Provider, { IProvider } from "../provider";
+import Service from "./index";
 
 jest.setTimeout(17000);
 
 const BLOCKCHAIN_URL = "ws://127.0.0.1:8545"; // "https://public-node.testnet.rsk.co"
+
+const DB_NAME = "test_db_service";
 
 const FIVE_MINUTES_IN_SECONDS = 300;
 
@@ -31,13 +46,27 @@ const deployContract = async (
   );
 };
 
-describe("Provider", function (this: {
+describe("Service", function (this: {
+  cache: ICache;
+  provider: IProvider;
+  repository: Repository<ScheduledTransaction>;
   oneShotScheduleContract: any;
   txOptions: { from: string };
   web3: Web3;
   scheduleTransaction: (gas: number, timestamp: Date) => Promise<void>;
 }) {
+  afterEach(async () => {
+    await resetDatabase(getConnection());
+    await deleteDatabase(getConnection(), DB_NAME);
+  });
   beforeEach(async () => {
+    const connection = await createSqliteConnection(DB_NAME);
+
+    this.repository = connection.getRepository(ScheduledTransaction);
+
+    this.cache = new Cache(this.repository);
+
+    //---
     this.web3 = new Web3(BLOCKCHAIN_URL);
     const [from] = await this.web3.eth.getAccounts();
     this.txOptions = { from };
@@ -74,35 +103,29 @@ describe("Provider", function (this: {
         )
         .send({ ...this.txOptions, gas: gasEstimated });
     };
+
+    this.provider = new Provider(this.oneShotScheduleContract.options.address);
   });
 
-  test("Should listen to MetatransactionAdded past events", async () => {
-    await this.scheduleTransaction(50000, new Date());
-
-    // console.log(
-    //   await this.oneShotScheduleContract.methods.getSchedule(0).call()
-    // );
-
-    const provider = new Provider(this.oneShotScheduleContract.options.address);
-
-    const result = await provider.getPastMetatransactionAddedEvents();
-
-    expect(result.length).toBe(1);
-  });
-
-  test("Should listen to past events from 2 days ago to latest", async () => {
-    for (let i = 0; i < 10; i++) {
-      await this.scheduleTransaction(50000, new Date());
+  test("Should sync transactions after a restart", async () => {
+    for (let i = 0; i < 2; i++) {
+      await this.scheduleTransaction(50000, addMinutes(new Date(), -2));
     }
 
-    // console.log(
-    //   await this.oneShotScheduleContract.methods.getSchedule(0).call()
-    // );
+    const service = new Service(this.provider, this.cache);
 
-    const provider = new Provider(this.oneShotScheduleContract.options.address);
+    await service.start();
+    await service.stop();
 
-    const result = await provider.getPastMetatransactionAddedEvents();
+    for (let i = 0; i < 2; i++) {
+      await this.scheduleTransaction(50000, addMinutes(new Date(), -2));
+    }
 
-    expect(result.length).toBe(10);
+    await service.start();
+    await service.stop();
+
+    const count = await this.repository.count();
+
+    expect(count).toBe(4);
   });
 });

@@ -2,9 +2,10 @@ import { LessThanOrEqual, Repository } from "typeorm";
 import { ScheduledTransaction, ScheduledTransactionStatus } from "./entities";
 
 export interface ITransactionToSchedule {
-  transaction: string;
+  transactionIndex: number;
   executeAt: Date;
-  maxAmountOfGas: number;
+  gas: number;
+  blockNumber: number;
 }
 
 export interface ICache {
@@ -13,7 +14,8 @@ export interface ICache {
     transactionId: number,
     status: ScheduledTransactionStatus
   ): Promise<void>;
-  add(transaction: ITransactionToSchedule): Promise<number>;
+  add(transaction: ITransactionToSchedule): Promise<number | undefined>;
+  getLastBlockNumber(): Promise<number | undefined>;
 }
 
 class Cache implements ICache {
@@ -48,15 +50,32 @@ class Cache implements ICache {
   }
 
   async add(transaction: ITransactionToSchedule) {
-    const scheduledTransaction = await this.repository.save(
-      new ScheduledTransaction(
-        transaction.transaction,
-        transaction.executeAt.toISOString(),
-        transaction.maxAmountOfGas,
-        ScheduledTransactionStatus.scheduled
-      )
-    );
-    return scheduledTransaction.id;
+    let scheduledTransaction: ScheduledTransaction | undefined = undefined;
+
+    try {
+      scheduledTransaction = await this.repository.save(
+        new ScheduledTransaction(
+          transaction.transactionIndex,
+          transaction.executeAt.toISOString(),
+          transaction.gas,
+          ScheduledTransactionStatus.scheduled,
+          transaction.blockNumber
+        )
+      );
+    } catch (error) {
+      if (error?.code !== "SQLITE_CONSTRAINT") throw error;
+    }
+
+    return scheduledTransaction?.id;
+  }
+
+  async getLastBlockNumber() {
+    const result = await this.repository
+      .createQueryBuilder()
+      .orderBy("blockNumber", "DESC")
+      .getOne();
+
+    return result?.blockNumber;
   }
 }
 

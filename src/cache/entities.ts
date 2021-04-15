@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
 
 export enum ScheduledTransactionStatus {
   scheduled = "scheduled",
@@ -10,31 +10,38 @@ export enum ScheduledTransactionStatus {
 @Entity()
 export class ScheduledTransaction {
   constructor(
-    transaction: string,
+    transactionIndex: number,
     executeAt: string,
-    maxAmountOfGas: number,
-    status: ScheduledTransactionStatus
+    gas: number,
+    status: ScheduledTransactionStatus,
+    blockNumber: number
   ) {
-    this.transaction = transaction;
+    this.transactionIndex = transactionIndex;
     this.executeAt = executeAt;
-    this.maxAmountOfGas = maxAmountOfGas;
+    this.gas = gas;
     this.status = status;
+    this.blockNumber = blockNumber;
   }
 
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column("text")
-  transaction!: string;
+  @Column("integer")
+  @Index({ unique: true })
+  transactionIndex!: number;
 
   @Column("text")
   executeAt!: string;
 
   @Column("double")
-  maxAmountOfGas!: number;
+  gas!: number;
 
   @Column("text")
   status!: ScheduledTransactionStatus;
+
+  @Column("integer")
+  @Index({ unique: false })
+  blockNumber!: number;
 }
 
 export default [ScheduledTransaction];

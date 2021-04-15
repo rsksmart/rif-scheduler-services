@@ -24,8 +24,9 @@ describe("Cache", () => {
 
     const id = await store.add({
       executeAt: date,
-      maxAmountOfGas: 100,
-      transaction: "test 1",
+      gas: 100,
+      transactionIndex: 1,
+      blockNumber: 1,
     });
 
     const count = await repository.count();
@@ -44,9 +45,11 @@ describe("Cache", () => {
 
     const id = await store.add({
       executeAt: date,
-      maxAmountOfGas: 100,
-      transaction: "test 1",
+      gas: 100,
+      transactionIndex: 1,
+      blockNumber: 1,
     });
+    if (!id) throw new Error("failed insert into cache");
 
     const count = await repository.count();
     const initialStatus = (await repository.findOne(id))?.status;
@@ -70,18 +73,21 @@ describe("Cache", () => {
 
     await store.add({
       executeAt: oldDate,
-      maxAmountOfGas: 100,
-      transaction: "test 1",
+      gas: 100,
+      transactionIndex: 1,
+      blockNumber: 1,
     });
     await store.add({
       executeAt: oldDate,
-      maxAmountOfGas: 100,
-      transaction: "test 1",
+      gas: 100,
+      transactionIndex: 2,
+      blockNumber: 2,
     });
     await store.add({
       executeAt: futureDate,
-      maxAmountOfGas: 100,
-      transaction: "test 1",
+      gas: 100,
+      transactionIndex: 3,
+      blockNumber: 3,
     });
 
     const count = await repository.count();
@@ -96,5 +102,40 @@ describe("Cache", () => {
         LESS_THAN_NOW
       );
     });
+  });
+
+  test("Should last blockNumber", async () => {
+    const connection = await createSqliteConnection(DB_NAME);
+    const repository = connection.getRepository(ScheduledTransaction);
+
+    const store = new Cache(repository);
+
+    const date = addMinutes(new Date(), -2);
+
+    await store.add({
+      executeAt: date,
+      gas: 100,
+      transactionIndex: 1,
+      blockNumber: 20,
+    });
+    await store.add({
+      executeAt: date,
+      gas: 100,
+      transactionIndex: 2,
+      blockNumber: 90,
+    });
+    await store.add({
+      executeAt: date,
+      gas: 100,
+      transactionIndex: 3,
+      blockNumber: 40,
+    });
+
+    const lastBlockNumber = await store.getLastBlockNumber();
+
+    const count = await repository.count();
+
+    expect(count).toBe(3);
+    expect(lastBlockNumber).toBe(90);
   });
 });
