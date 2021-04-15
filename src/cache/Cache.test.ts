@@ -104,7 +104,7 @@ describe("Cache", () => {
     });
   });
 
-  test("Should last blockNumber", async () => {
+  test("Should get latest blockNumber", async () => {
     const connection = await createSqliteConnection(DB_NAME);
     const repository = connection.getRepository(ScheduledTransaction);
 
