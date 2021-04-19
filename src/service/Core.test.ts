@@ -4,22 +4,19 @@ import {
   createSqliteConnection,
 } from "../cache/db";
 import { getConnection, Repository } from "typeorm";
-import {
-  ScheduledTransaction,
-  ScheduledTransactionStatus,
-} from "../cache/entities";
+import { ScheduledTransaction } from "../cache/entities";
 import Cache, { ICache } from "../cache";
-import { addMinutes, compareAsc } from "date-fns";
+import { addMinutes } from "date-fns";
 import Web3 from "web3";
 import { Contract } from "web3-eth-contract";
 import { AbiItem } from "web3-utils";
 import OneShotScheduleData from "../contract/OneShotSchedule.json";
-import Provider, { IProvider } from "../provider";
-import Service from "./index";
+import OneShotSchedule, { IProvider } from "../provider";
+import Core from "./index";
 
 jest.setTimeout(17000);
 
-const BLOCKCHAIN_URL = "ws://127.0.0.1:8545"; // "https://public-node.testnet.rsk.co"
+const BLOCKCHAIN_URL = "http://127.0.0.1:8545"; // "https://public-node.testnet.rsk.co"
 
 const DB_NAME = "test_db_service";
 
@@ -46,7 +43,7 @@ const deployContract = async (
   );
 };
 
-describe("Service", function (this: {
+describe("Core", function (this: {
   cache: ICache;
   provider: IProvider;
   repository: Repository<ScheduledTransaction>;
@@ -104,7 +101,9 @@ describe("Service", function (this: {
         .send({ ...this.txOptions, gas: gasEstimated });
     };
 
-    this.provider = new Provider(this.oneShotScheduleContract.options.address);
+    this.provider = new OneShotSchedule(
+      this.oneShotScheduleContract.options.address
+    );
   });
 
   test("Should sync transactions after a restart", async () => {
@@ -112,7 +111,7 @@ describe("Service", function (this: {
       await this.scheduleTransaction(50000, addMinutes(new Date(), -2));
     }
 
-    const service = new Service(this.provider, this.cache);
+    const service = new Core(this.provider, this.cache);
 
     await service.start();
     await service.stop();

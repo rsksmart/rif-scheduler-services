@@ -1,7 +1,7 @@
 import { ICache } from "../cache";
 import { IProvider } from "../provider";
 
-class Service {
+class Core {
   private provider: IProvider;
   private cache: ICache;
 
@@ -12,16 +12,16 @@ class Service {
 
   async start() {
     // Phase 1: add missed/older events to cache
-    const lastBlockNumber = await this.cache.getLastBlockNumber();
+    const lastBlockNumber = await this.cache.getLastSyncedBlock();
 
-    const pastEvents = await this.provider.getPastMetatransactionAddedEvents(
+    const pastEvents = await this.provider.getPastScheduledTransactions(
       lastBlockNumber
     );
 
     for (const event of pastEvents) {
-      await this.cache.add({
+      await this.cache.save({
         blockNumber: event.blockNumber,
-        executeAt: event.timestamp,
+        timestamp: event.timestamp,
         transactionIndex: event.index,
         gas: event.gas,
       });
@@ -38,4 +38,4 @@ class Service {
   }
 }
 
-export default Service;
+export default Core;

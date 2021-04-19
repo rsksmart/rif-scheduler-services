@@ -6,9 +6,6 @@ export interface IProvider {
   getPastScheduledTransactions(
     startFromBlock?: number
   ): Promise<IMetatransactionAddedValues[]>;
-  listenNewMetatransactionAddedEvent(
-    callback: (eventValues: IMetatransactionAddedValues) => Promise<void>
-  ): Promise<void>;
 }
 
 export interface IMetatransactionAddedValues {
@@ -21,9 +18,7 @@ export interface IMetatransactionAddedValues {
   blockNumber: number;
 }
 
-const ESTIMATED_BLOCKS_BY_DAY = 6500;
-
-const BLOCKCHAIN_URL = "ws://127.0.0.1:8545"; // "https://public-node.testnet.rsk.co"
+const BLOCKCHAIN_URL = "http://127.0.0.1:8545"; // "https://public-node.testnet.rsk.co"
 
 class OneShotSchedule implements IProvider {
   private web3: Web3;
@@ -38,17 +33,11 @@ class OneShotSchedule implements IProvider {
     );
   }
 
-  async getPastMetatransactionAddedEvents(startFromBlock?: number) {
-    let initialBlockNumber = startFromBlock;
-
-    if (!initialBlockNumber)
-      initialBlockNumber =
-        (await this.web3.eth.getBlockNumber()) - ESTIMATED_BLOCKS_BY_DAY * 2;
-
+  async getPastScheduledTransactions(startFromBlock: number = 0) {
     const result = await this.oneShotScheduleContract.getPastEvents(
       "MetatransactionAdded",
       {
-        fromBlock: initialBlockNumber,
+        fromBlock: startFromBlock,
         toBlock: "latest",
       }
     );
@@ -63,12 +52,6 @@ class OneShotSchedule implements IProvider {
       blockNumber,
     }));
   }
-
-  async listenNewMetatransactionAddedEvent(
-    callback: (eventValues: IMetatransactionAddedValues) => Promise<void>
-  ) {
-    throw new Error("not implemented yet");
-  }
 }
 
-export default Provider;
+export default OneShotSchedule;

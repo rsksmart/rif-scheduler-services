@@ -6,7 +6,7 @@ import OneShotScheduleData from "../contract/OneShotSchedule.json";
 
 jest.setTimeout(17000);
 
-const BLOCKCHAIN_URL = "ws://127.0.0.1:8545"; // "https://public-node.testnet.rsk.co"
+const BLOCKCHAIN_URL = "http://127.0.0.1:8545"; // "https://public-node.testnet.rsk.co"
 
 const FIVE_MINUTES_IN_SECONDS = 300;
 
@@ -31,7 +31,7 @@ const deployContract = async (
   );
 };
 
-describe("Provider", function (this: {
+describe("OneShotSchedule", function (this: {
   oneShotScheduleContract: any;
   txOptions: { from: string };
   web3: Web3;
@@ -85,7 +85,7 @@ describe("Provider", function (this: {
 
     const provider = new Provider(this.oneShotScheduleContract.options.address);
 
-    const result = await provider.getPastMetatransactionAddedEvents();
+    const result = await provider.getPastScheduledTransactions();
 
     expect(result.length).toBe(1);
   });
@@ -101,7 +101,7 @@ describe("Provider", function (this: {
 
     const provider = new Provider(this.oneShotScheduleContract.options.address);
 
-    const result = await provider.getPastMetatransactionAddedEvents();
+    const result = await provider.getPastScheduledTransactions();
 
     expect(result.length).toBe(10);
   });

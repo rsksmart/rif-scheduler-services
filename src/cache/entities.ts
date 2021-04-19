@@ -1,25 +1,16 @@
 import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
 
-export enum ScheduledTransactionStatus {
-  scheduled = "scheduled",
-  finished = "finished",
-  canceled = "canceled",
-  failed = "failed",
-}
-
 @Entity()
 export class ScheduledTransaction {
   constructor(
     transactionIndex: number,
-    executeAt: string,
+    timestamp: string,
     gas: number,
-    status: ScheduledTransactionStatus,
     blockNumber: number
   ) {
     this.transactionIndex = transactionIndex;
-    this.executeAt = executeAt;
+    this.timestamp = timestamp;
     this.gas = gas;
-    this.status = status;
     this.blockNumber = blockNumber;
   }
 
@@ -35,9 +26,6 @@ export class ScheduledTransaction {
 
   @Column("double")
   gas!: number;
-
-  @Column("text")
-  status!: ScheduledTransactionStatus;
 
   @Column("integer")
   @Index({ unique: false })

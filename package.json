@@ -6,10 +6,10 @@
   "types": "lib",
   "scripts": {
     "start": "nodemon",
-    "test": "npx jest src/*/* --verbose --coverage --collectCoverageFrom=src/*/*",
-    "test:watch": "npx jest src/*/* --verbose --detectOpenHandles --coverage --collectCoverageFrom=src/*/* --watch",
-    "test:dev": "npx jest src/*/* --verbose --watch",
-    "build": "rimraf ./lib && tsc"
+    "test": "npx jest src/*/* --verbose --coverage",
+    "test:watch": "npx jest src/*/* --verbose --coverage --watch",
+    "build": "rimraf ./lib && tsc",
+    "lint": "npx eslint ./src --ext .json,.js,.ts"
   },
   "repository": {
     "type": "git",
