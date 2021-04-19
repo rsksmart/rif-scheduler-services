@@ -25,7 +25,7 @@ const ESTIMATED_BLOCKS_BY_DAY = 6500;
 
 const BLOCKCHAIN_URL = "ws://127.0.0.1:8545"; // "https://public-node.testnet.rsk.co"
 
-class Provider implements IProvider {
+class OneShotSchedule implements IProvider {
   private web3: Web3;
   private oneShotScheduleContract: any;
 
