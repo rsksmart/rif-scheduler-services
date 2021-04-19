@@ -5,3 +5,36 @@
 <p align="middle">
     Schedule RSK transactions
 </p>
+
+## Setup
+
+Install dependencies
+
+```
+npm i
+```
+## Test
+
+1. Start ganache
+
+  ```
+  npx ganache-cli
+  ```
+
+3. Run tests
+
+  ```
+  npm test
+  ```
+
+  or watch mode with
+
+  ```
+  test:watch
+  ```
+
+## Lint
+
+```
+npm run lint
+```
