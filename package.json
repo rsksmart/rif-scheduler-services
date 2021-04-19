@@ -1,7 +1,7 @@
 {
   "name": "rif-scheduler-services",
   "version": "1.0.0",
-  "description": "<p align=\"middle\">\r     <img src=\"https://www.rifos.org/assets/img/logo.svg\" alt=\"logo\" height=\"100\" >\r </p>\r <h3 align=\"middle\">RIF Scheduler services</h3>\r <p align=\"middle\">\r     Schedule RSK transactions\r </p>",
+  "description": "RIF Scheduler services",
   "main": "lib/index.js",
   "types": "lib",
   "scripts": {
