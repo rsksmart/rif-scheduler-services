@@ -31,7 +31,7 @@ export class ScheduledTransaction {
   transactionIndex!: number;
 
   @Column("text")
-  executeAt!: string;
+  timestamp!: string;
 
   @Column("double")
   gas!: number;
