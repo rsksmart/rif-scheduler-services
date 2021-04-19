@@ -15,7 +15,7 @@ export interface ICache {
     status: ScheduledTransactionStatus
   ): Promise<void>;
   add(transaction: ITransactionToSchedule): Promise<number | undefined>;
-  getLastBlockNumber(): Promise<number | undefined>;
+  getLastSyncedBlock(): Promise<number | undefined>;
 }
 
 class Cache implements ICache {
