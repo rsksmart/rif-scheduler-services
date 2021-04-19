@@ -3,7 +3,7 @@ import { AbiItem } from "web3-utils";
 import OneShotScheduleData from "../contract/OneShotSchedule.json";
 
 export interface IProvider {
-  getPastMetatransactionAddedEvents(
+  getPastScheduledTransactions(
     startFromBlock?: number
   ): Promise<IMetatransactionAddedValues[]>;
   listenNewMetatransactionAddedEvent(
