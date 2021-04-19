@@ -1,35 +1,35 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm'
 
 @Entity()
 export class ScheduledTransaction {
-  constructor(
+  constructor (
     transactionIndex: number,
     timestamp: string,
     gas: number,
     blockNumber: number
   ) {
-    this.transactionIndex = transactionIndex;
-    this.timestamp = timestamp;
-    this.gas = gas;
-    this.blockNumber = blockNumber;
+    this.transactionIndex = transactionIndex
+    this.timestamp = timestamp
+    this.gas = gas
+    this.blockNumber = blockNumber
   }
 
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column("integer")
+  @Column('integer')
   @Index({ unique: true })
   transactionIndex!: number;
 
-  @Column("text")
+  @Column('text')
   timestamp!: string;
 
-  @Column("double")
+  @Column('double')
   gas!: number;
 
-  @Column("integer")
+  @Column('integer')
   @Index({ unique: false })
   blockNumber!: number;
 }
 
-export default [ScheduledTransaction];
+export default [ScheduledTransaction]
