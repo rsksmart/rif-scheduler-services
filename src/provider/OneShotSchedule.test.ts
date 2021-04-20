@@ -105,4 +105,15 @@ describe('OneShotSchedule', function (this: {
 
     expect(result.length).toBe(10)
   })
+
+  test('Should execute callback after schedule a new transaction', async (done) => {
+    const provider = new Provider(this.oneShotScheduleContract.options.address)
+
+    provider.listenNewScheduledTransactions(async (event) => {
+      expect(event).toBeDefined()
+      done()
+    })
+
+    await this.scheduleTransaction(50000, new Date())
+  })
 })

@@ -127,4 +127,20 @@ describe('Core', function (this: {
 
     expect(count).toBe(4)
   })
+
+  test('Should cache new scheduled transations', async () => {
+    const service = new Core(this.provider, this.cache)
+
+    await service.start()
+
+    for (let i = 0; i < 2; i++) {
+      await this.scheduleTransaction(50000, addMinutes(new Date(), -2))
+    }
+
+    await service.stop()
+
+    const count = await this.repository.count()
+
+    expect(count).toBe(2)
+  })
 })

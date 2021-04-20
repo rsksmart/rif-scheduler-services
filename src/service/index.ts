@@ -27,13 +27,21 @@ class Core {
       })
     }
 
-    // TODO: Phase 2: start listening and adds to cache new events
+    // Phase 2: start listening and adds to cache new events
+    await this.provider.listenNewScheduledTransactions(async (event) => {
+      await this.cache.save({
+        blockNumber: event.blockNumber,
+        timestamp: event.timestamp,
+        transactionIndex: event.index,
+        gas: event.gas
+      })
+    })
 
     // TODO: Phase 3: trigger scheduled transactions every n minutes
   }
 
   async stop () {
-    // TODO: stop SM listener
+    // TODO: stop provider event listener
     // TODO: stop schedule trigger
   }
 }
