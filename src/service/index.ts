@@ -41,7 +41,7 @@ class Core {
   }
 
   async stop () {
-    // TODO: stop provider event listener
+    await this.provider.disconnect()
     // TODO: stop schedule trigger
   }
 }

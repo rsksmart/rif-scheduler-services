@@ -101,9 +101,7 @@ describe('Core', function (this: {
         .send({ ...this.txOptions, gas: gasEstimated })
     }
 
-    this.provider = new OneShotSchedule(
-      this.oneShotScheduleContract.options.address
-    )
+    this.provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
   })
 
   test('Should sync transactions after a restart', async () => {
@@ -114,21 +112,23 @@ describe('Core', function (this: {
     const service = new Core(this.provider, this.cache)
 
     await service.start()
-    await service.stop()
+
+    const firstCount = await this.repository.count()
+
+    expect(firstCount).toBe(2)
 
     for (let i = 0; i < 2; i++) {
       await this.scheduleTransaction(50000, addMinutes(new Date(), -2))
     }
 
-    await service.start()
+    const secondCount = await this.repository.count()
+
+    expect(secondCount).toBe(4)
+
     await service.stop()
-
-    const count = await this.repository.count()
-
-    expect(count).toBe(4)
   })
 
-  test('Should cache new scheduled transations', async () => {
+  test('Should cache new scheduled transactions', async () => {
     const service = new Core(this.provider, this.cache)
 
     await service.start()
@@ -137,10 +137,10 @@ describe('Core', function (this: {
       await this.scheduleTransaction(50000, addMinutes(new Date(), -2))
     }
 
-    await service.stop()
-
     const count = await this.repository.count()
 
     expect(count).toBe(2)
+
+    await service.stop()
   })
 })

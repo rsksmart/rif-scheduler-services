@@ -1,4 +1,5 @@
 import Web3 from 'web3'
+import { WebsocketProvider } from 'web3-core/types/index'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 
@@ -19,17 +20,20 @@ export interface IProvider {
   listenNewScheduledTransactions(
     callback: (eventValues: IMetatransactionAddedValues) => Promise<void>
   ): Promise<void>;
+  disconnect(): Promise<void>;
 }
 
 const BLOCKCHAIN_URL = 'ws://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 
 class OneShotSchedule implements IProvider {
   private web3: Web3;
+  private webSocketProvider: WebsocketProvider;
   private oneShotScheduleContract: any;
-  private subscription: any;
 
   constructor (address: string) {
-    this.web3 = new Web3(BLOCKCHAIN_URL)
+    this.webSocketProvider = new Web3.providers.WebsocketProvider(BLOCKCHAIN_URL)
+
+    this.web3 = new Web3(this.webSocketProvider)
 
     this.oneShotScheduleContract = new this.web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
@@ -52,7 +56,7 @@ class OneShotSchedule implements IProvider {
   async listenNewScheduledTransactions (
     callback: (eventValues: IMetatransactionAddedValues) => Promise<void>
   ) {
-    this.subscription = this.oneShotScheduleContract.events
+    this.oneShotScheduleContract.events
       .MetatransactionAdded({}, (error, event) => {
         if (error) {
           // TODO: what should we do?
@@ -63,6 +67,17 @@ class OneShotSchedule implements IProvider {
 
         callback(newEvent)
       })
+  }
+
+  async disconnect (): Promise<void> {
+    return new Promise((resolve) => {
+      this.webSocketProvider.on('end', () => {
+        console.log('WS closed')
+        resolve()
+      })
+      // this.webSocketProvider.on('error', () => reject(new Error('disconnect error')))
+      this.webSocketProvider.disconnect(0, 'close app')
+    })
   }
 
   private parseEvent ({ returnValues, blockNumber }): IMetatransactionAddedValues {
