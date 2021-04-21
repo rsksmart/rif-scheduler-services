@@ -105,6 +105,8 @@ describe('Core', function (this: {
   })
 
   test('Should sync transactions after a restart', async () => {
+    // TODO: if we stop the service then fails to reconnect
+
     for (let i = 0; i < 2; i++) {
       await this.scheduleTransaction(50000, addMinutes(new Date(), -2))
     }
@@ -112,6 +114,7 @@ describe('Core', function (this: {
     const service = new Core(this.provider, this.cache)
 
     await service.start()
+    // await service.stop()
 
     const firstCount = await this.repository.count()
 
@@ -120,6 +123,8 @@ describe('Core', function (this: {
     for (let i = 0; i < 2; i++) {
       await this.scheduleTransaction(50000, addMinutes(new Date(), -2))
     }
+
+    // await service.start()
 
     const secondCount = await this.repository.count()
 
