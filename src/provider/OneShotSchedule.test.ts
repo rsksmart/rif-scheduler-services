@@ -91,7 +91,9 @@ describe('OneShotSchedule', function (this: {
   })
 
   test('Should listen to past events from 2 days ago to latest', async () => {
-    for (let i = 0; i < 10; i++) {
+    const NUMBER_OF_SCHEDULED_TX = 10
+
+    for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
       await this.scheduleTransaction(50000, new Date())
     }
 
@@ -103,7 +105,11 @@ describe('OneShotSchedule', function (this: {
 
     const result = await provider.getPastScheduledTransactions()
 
-    expect(result.length).toBe(10)
+    for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
+      expect(result[i].index).toBe(i)
+      expect(result[i].blockNumber).toBeGreaterThan(0)
+    }
+    expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
   })
 
   test('Should execute callback after schedule a new transaction', async (done) => {
@@ -111,6 +117,8 @@ describe('OneShotSchedule', function (this: {
 
     provider.listenNewScheduledTransactions(async (event) => {
       expect(event).toBeDefined()
+      expect(event.index).toBe(0)
+      expect(event.blockNumber).toBeGreaterThan(0)
       done()
     })
 

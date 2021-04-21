@@ -37,8 +37,8 @@ class OneShotSchedule implements IProvider {
     )
   }
 
-  async getPastScheduledTransactions (startFromBlock: number = 0) {
-    const result = await this.oneShotScheduleContract.getPastEvents(
+  async getPastScheduledTransactions (startFromBlock: number = 0): Promise<IMetatransactionAddedValues[]> {
+    const pastEvents = await this.oneShotScheduleContract.getPastEvents(
       'MetatransactionAdded',
       {
         fromBlock: startFromBlock,
@@ -46,7 +46,27 @@ class OneShotSchedule implements IProvider {
       }
     )
 
-    return result.map(({ returnValues, blockNumber }) => ({
+    return pastEvents.map(this.parseEvent)
+  }
+
+  async listenNewScheduledTransactions (
+    callback: (eventValues: IMetatransactionAddedValues) => Promise<void>
+  ) {
+    this.subscription = this.oneShotScheduleContract.events
+      .MetatransactionAdded({}, (error, event) => {
+        if (error) {
+          // TODO: what should we do?
+          throw error
+        }
+
+        const newEvent = this.parseEvent(event)
+
+        callback(newEvent)
+      })
+  }
+
+  private parseEvent ({ returnValues, blockNumber }): IMetatransactionAddedValues {
+    return {
       index: +returnValues.index,
       to: returnValues.to,
       data: returnValues.data,
@@ -54,32 +74,7 @@ class OneShotSchedule implements IProvider {
       timestamp: new Date(+returnValues.timestamp * 1000),
       value: returnValues.value,
       blockNumber
-    }))
-  }
-
-  async listenNewScheduledTransactions (
-    callback: (eventValues: IMetatransactionAddedValues) => Promise<void>
-  ) {
-    this.subscription = this.oneShotScheduleContract.events
-      .MetatransactionAdded({}, (error, { returnValues, blockNumber }) => {
-        // console.log('event new', returnValues, blockNumber) // same results as the optional callback above
-        if (error) {
-          // TODO: what should we do?
-          return
-        }
-
-        const result: IMetatransactionAddedValues = {
-          index: +returnValues.index,
-          to: returnValues.to,
-          data: returnValues.data,
-          gas: +returnValues.gas,
-          timestamp: new Date(+returnValues.timestamp * 1000),
-          value: returnValues.value,
-          blockNumber
-        }
-
-        callback(result)
-      })
+    }
   }
 }
 
