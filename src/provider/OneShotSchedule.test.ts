@@ -129,4 +129,18 @@ describe('OneShotSchedule', function (this: {
 
     await this.scheduleTransaction(50000, new Date())
   })
+
+  test('Should not execute the callback when disconnected', async () => {
+    const callback = jest.fn()
+
+    const provider = new Provider(this.oneShotScheduleContract.options.address)
+
+    provider.disconnect()
+
+    provider.listenNewScheduledTransactions(callback)
+
+    await this.scheduleTransaction(50000, new Date())
+
+    expect(callback).not.toBeCalled()
+  })
 })
