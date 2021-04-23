@@ -88,20 +88,36 @@ describe('OneShotSchedule', function (this: {
         .approve(this.oneShotScheduleContract.options.address, plans[plan].price)
         .send({ ...this.txOptions, gas: approveGas })
 
-      const purchaseGas = await this.oneShotScheduleContract.methods
-        .purchase(plan, this.web3.utils.toBN(1))
-        .estimateGas()
-      await this.oneShotScheduleContract.methods
-        .purchase(plan, this.web3.utils.toBN(1))
-        .send({ ...this.txOptions, gas: purchaseGas })
+      // const purchaseGas = await this.oneShotScheduleContract.methods
+      //   .purchase(plan, this.web3.utils.toBN(1))
+      //   .estimateGas()
+      // await this.oneShotScheduleContract.methods
+      //   .purchase(plan, this.web3.utils.toBN(1))
+      //   .send({ ...this.txOptions, gas: purchaseGas })
 
-      const scheduleGas = await this.oneShotScheduleContract.methods
-        .schedule(plan, to, data, gas, timestampContract)
-        .estimateGas()
-      await this.oneShotScheduleContract.methods
-        .schedule(plan, to, data, gas, timestampContract)
-        .send({ ...this.txOptions, value, gas: scheduleGas })
+      // const scheduleGas = await this.oneShotScheduleContract.methods
+      //   .schedule(plan, to, data, gas, timestampContract)
+      //   .estimateGas()
+      // await this.oneShotScheduleContract.methods
+      //   .schedule(plan, to, data, gas, timestampContract)
+      //   .send({ ...this.txOptions, value, gas: scheduleGas })
     }
+  })
+
+  test.only('remove', async () => {
+    await this.scheduleTransaction(0, getMethodSigIncData(this.web3), this.web3.utils.toBN(0), new Date())
+
+    console.log(
+      await this.oneShotScheduleContract.methods.getRemainingSchedulings(this.txOptions.from, 0).call()
+    )
+
+    // const provider = new Provider(this.oneShotScheduleContract.options.address)
+
+    // const result = await provider.getPastScheduledTransactions()
+
+    // expect(result.length).toBe(1);
+
+    // await provider.disconnect()
   })
 
   test('Should get all past events', async () => {
