@@ -2,6 +2,7 @@ import Web3 from 'web3'
 import { WebsocketProvider } from 'web3-core/types/index'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
+import loggerFactory from '../loggerFactory'
 
 export interface IMetatransactionAddedValues {
   index: number;
@@ -59,8 +60,8 @@ class OneShotSchedule implements IProvider {
     this.oneShotScheduleContract.events
       .MetatransactionAdded({}, (error, event) => {
         if (error) {
-          // TODO: what should we do?
-          throw error
+          loggerFactory().error('The websocket connection is not opened', error)
+          return
         }
 
         const newEvent = this.parseEvent(event)
@@ -72,10 +73,13 @@ class OneShotSchedule implements IProvider {
   async disconnect (): Promise<void> {
     return new Promise((resolve) => {
       this.webSocketProvider.on('end', () => {
-        console.log('WS closed')
+        // console.log('WS closed')
         resolve()
       })
-      // this.webSocketProvider.on('error', () => reject(new Error('disconnect error')))
+      this.webSocketProvider.on('error', () => {
+        loggerFactory().error('Failed while the websocket was disconnecting')
+        resolve()
+      })
       this.webSocketProvider.disconnect(0, 'close app')
     })
   }

@@ -6,7 +6,7 @@ import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
 import { addMinutes } from 'date-fns'
-
+import loggerFactory from '../loggerFactory'
 const { toBN } = Web3.utils
 
 jest.setTimeout(17000)
@@ -161,5 +161,23 @@ describe('OneShotSchedule', function (this: {
     const timestamp = addMinutes(new Date(), 5)
 
     await this.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
+  })
+
+  test('Should not execute the callback when disconnected', async () => {
+    const logger = loggerFactory()
+    const logErrorSpied = jest.spyOn(logger, 'error')
+
+    const callback = jest.fn()
+
+    const provider = new Provider(this.oneShotScheduleContract.options.address)
+
+    provider.disconnect()
+
+    provider.listenNewScheduledTransactions(callback)
+
+    await this.scheduleTransaction(50000, new Date())
+
+    expect(logErrorSpied).toHaveBeenCalledWith('The websocket connection is not opened', expect.anything())
+    expect(callback).not.toBeCalled()
   })
 })

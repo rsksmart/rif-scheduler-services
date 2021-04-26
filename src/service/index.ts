@@ -1,4 +1,5 @@
 import { ICache } from '../cache'
+import loggerFactory from '../loggerFactory'
 import { IProvider } from '../provider'
 
 class Core {
@@ -11,7 +12,9 @@ class Core {
   }
 
   async start () {
-    // Phase 1: add missed/older events to cache
+    loggerFactory().debug('Starting...')
+
+    loggerFactory().debug('Sync missed/older events')
     const lastBlockNumber = await this.cache.getLastSyncedBlock()
 
     const pastEvents = await this.provider.getPastScheduledTransactions(
@@ -27,7 +30,8 @@ class Core {
       })
     }
 
-    // Phase 2: start listening and adds to cache new events
+    loggerFactory().debug('Start listening new events')
+
     await this.provider.listenNewScheduledTransactions(async (event) => {
       await this.cache.save({
         blockNumber: event.blockNumber,
@@ -43,6 +47,8 @@ class Core {
   async stop () {
     await this.provider.disconnect()
     // TODO: stop schedule trigger
+
+    loggerFactory().debug('Stopped')
   }
 }
 
