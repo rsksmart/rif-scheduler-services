@@ -3,6 +3,7 @@ import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
 import Provider from './index'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
+import loggerFactory from '../loggerFactory'
 
 jest.setTimeout(17000)
 
@@ -93,7 +94,7 @@ describe('OneShotSchedule', function (this: {
   })
 
   test('Should listen to past events from 2 days ago to latest', async () => {
-    const NUMBER_OF_SCHEDULED_TX = 10
+    const NUMBER_OF_SCHEDULED_TX = 2
 
     for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
       await this.scheduleTransaction(50000, new Date())
@@ -131,6 +132,9 @@ describe('OneShotSchedule', function (this: {
   })
 
   test('Should not execute the callback when disconnected', async () => {
+    const logger = loggerFactory()
+    const logErrorSpied = jest.spyOn(logger, 'error')
+
     const callback = jest.fn()
 
     const provider = new Provider(this.oneShotScheduleContract.options.address)
@@ -141,6 +145,7 @@ describe('OneShotSchedule', function (this: {
 
     await this.scheduleTransaction(50000, new Date())
 
+    expect(logErrorSpied).toHaveBeenCalledWith('The websocket connection is not opened', expect.anything())
     expect(callback).not.toBeCalled()
   })
 })
