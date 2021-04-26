@@ -175,7 +175,9 @@ describe('OneShotSchedule', function (this: {
 
     provider.listenNewScheduledTransactions(callback)
 
-    await this.scheduleTransaction(50000, new Date())
+    const timestamp = addMinutes(new Date(), 5)
+
+    await this.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
 
     expect(logErrorSpied).toHaveBeenCalledWith('The websocket connection is not opened', expect.anything())
     expect(callback).not.toBeCalled()
