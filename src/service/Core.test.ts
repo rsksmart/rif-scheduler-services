@@ -11,8 +11,12 @@ import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
+import ERC677Data from '../contract/ERC677.json'
+import CounterData from '../contract/Counter.json'
 import OneShotSchedule, { IProvider } from '../provider'
 import Core from './index'
+
+const { toBN } = Web3.utils
 
 jest.setTimeout(17000)
 
@@ -20,7 +24,7 @@ const BLOCKCHAIN_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.r
 
 const DB_NAME = 'test_db_service'
 
-const FIVE_MINUTES_IN_SECONDS = 300
+const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
 const deployContract = async (
   web3: Web3,
@@ -48,9 +52,12 @@ describe('Core', function (this: {
   provider: IProvider;
   repository: Repository<ScheduledTransaction>;
   oneShotScheduleContract: any;
+  token: any;
+  counter: any;
   txOptions: { from: string };
+  plans: any[],
   web3: Web3;
-  scheduleTransaction: (gas: number, timestamp: Date) => Promise<void>;
+  scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
 }) {
   afterEach(async () => {
     await resetDatabase(getConnection())
@@ -68,37 +75,71 @@ describe('Core', function (this: {
     const [from] = await this.web3.eth.getAccounts()
     this.txOptions = { from }
     this.web3.eth.defaultAccount = from
+    this.plans = [
+      { price: toBN(15), window: toBN(10000) },
+      { price: toBN(4), window: toBN(300) }
+    ]
+
+    this.token = await deployContract(
+      this.web3,
+      ERC677Data.abi as AbiItem[],
+      ERC677Data.bytecode,
+      [from, toBN('1000000000000000000000'), 'RIFOS', 'RIF']
+    )
+
+    // console.log('balance',
+    //   await this.token.methods.balanceOf(from).call()
+    // )
+
+    this.counter = await deployContract(
+      this.web3,
+      CounterData.abi as AbiItem[],
+      CounterData.bytecode,
+      []
+    )
 
     this.oneShotScheduleContract = await deployContract(
       this.web3,
       OneShotScheduleData.abi as AbiItem[],
       OneShotScheduleData.bytecode,
-      [FIVE_MINUTES_IN_SECONDS]
+      [this.token.options.address, from]
     )
 
-    this.scheduleTransaction = async (gas: number, timestamp: Date) => {
-      const timestampContract = this.web3.utils.toBN(
+    const addPlanGas = await this.oneShotScheduleContract.methods
+      .addPlan(this.plans[0].price, this.plans[0].window)
+      .estimateGas()
+    await this.oneShotScheduleContract.methods
+      .addPlan(this.plans[0].price, this.plans[0].window)
+      .send({ ...this.txOptions, gas: addPlanGas })
+
+    this.scheduleTransaction = async (plan: number, data: any, value: any, timestamp: Date) => {
+      const timestampContract = toBN(
         Math.floor(+timestamp / 1000)
       )
-      const gasContract = this.web3.utils.toBN(gas)
 
-      const gasEstimated = await this.oneShotScheduleContract.methods
-        .schedule(
-          '0x33810883Af0dD41970E30A87982A5f6F71b7aE3E',
-          '0x00',
-          gasContract,
-          timestampContract
-        )
+      const to = this.counter.options.address
+      const gas = toBN(await this.counter.methods.inc().estimateGas())
+
+      const approveGas = await this.token.methods
+        .approve(this.oneShotScheduleContract.options.address, this.plans[plan].price)
         .estimateGas()
+      await this.token.methods
+        .approve(this.oneShotScheduleContract.options.address, this.plans[plan].price)
+        .send({ ...this.txOptions, gas: approveGas })
 
+      const purchaseGas = await this.oneShotScheduleContract.methods
+        .purchase(plan, toBN(1))
+        .estimateGas()
       await this.oneShotScheduleContract.methods
-        .schedule(
-          '0x33810883Af0dD41970E30A87982A5f6F71b7aE3E',
-          '0x00',
-          gasContract,
-          timestampContract
-        )
-        .send({ ...this.txOptions, gas: gasEstimated })
+        .purchase(plan, toBN(1))
+        .send({ ...this.txOptions, gas: purchaseGas })
+
+      const scheduleGas = await this.oneShotScheduleContract.methods
+        .schedule(plan, to, data, gas, timestampContract)
+        .estimateGas()
+      await this.oneShotScheduleContract.methods
+        .schedule(plan, to, data, gas, timestampContract)
+        .send({ ...this.txOptions, value, gas: scheduleGas })
     }
 
     this.provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
@@ -107,8 +148,11 @@ describe('Core', function (this: {
   test('Should sync transactions after a restart', async () => {
     // TODO: if we stop the service then fails to reconnect
 
+    const incData = getMethodSigIncData(this.web3)
+    const timestamp1 = addMinutes(new Date(), 5)
+
     for (let i = 0; i < 2; i++) {
-      await this.scheduleTransaction(50000, addMinutes(new Date(), -2))
+      await this.scheduleTransaction(0, incData, toBN(0), timestamp1)
     }
 
     const service = new Core(this.provider, this.cache)
@@ -120,8 +164,9 @@ describe('Core', function (this: {
 
     expect(firstCount).toBe(2)
 
+    const timestamp2 = addMinutes(new Date(), 5)
     for (let i = 0; i < 2; i++) {
-      await this.scheduleTransaction(50000, addMinutes(new Date(), -2))
+      await this.scheduleTransaction(0, incData, toBN(0), timestamp2)
     }
 
     // await service.start()
@@ -138,8 +183,11 @@ describe('Core', function (this: {
 
     await service.start()
 
+    const incData = getMethodSigIncData(this.web3)
+    const timestamp = addMinutes(new Date(), 5)
+
     for (let i = 0; i < 2; i++) {
-      await this.scheduleTransaction(50000, addMinutes(new Date(), -2))
+      await this.scheduleTransaction(0, incData, toBN(0), timestamp)
     }
 
     const count = await this.repository.count()
