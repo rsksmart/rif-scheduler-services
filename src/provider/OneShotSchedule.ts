@@ -13,6 +13,7 @@ export interface IProvider {
   listenNewScheduledTransactions(
     callback: (eventValues: IMetatransaction) => Promise<void>
   ): Promise<void>;
+  executeTransaction(transaction: IMetatransaction): Promise<void>;
   disconnect(): Promise<void>;
 }
 

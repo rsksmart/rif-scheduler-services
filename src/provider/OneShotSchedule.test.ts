@@ -183,4 +183,43 @@ describe('OneShotSchedule', function (this: {
     expect(logErrorSpied).toHaveBeenCalledWith('The websocket connection is not opened', expect.anything())
     expect(callback).not.toBeCalled()
   })
+
+  test('Should execute a scheduled tx', async () => {
+    const CONFIRMATIONS_REQUIRED = 10
+
+    const incData = getMethodSigIncData(this.web3)
+    const timestamp = addMinutes(new Date(), 5)
+
+    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
+
+    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
+
+    const [transaction] = await provider.getPastScheduledTransactions()
+
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
+
+    await provider.executeTransaction(transaction)
+
+    await provider.disconnect()
+  })
+
+  test('Should throw error when execute a scheduled tx without the confirmations required', async () => {
+    const CONFIRMATIONS_REQUIRED = 10
+
+    const incData = getMethodSigIncData(this.web3)
+    const timestamp = addMinutes(new Date(), 5)
+
+    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
+
+    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
+
+    const [transaction] = await provider.getPastScheduledTransactions()
+
+    await expect(provider.executeTransaction(transaction))
+      .rejects
+      .toThrow('Minimum confirmations required')
+
+    await provider.disconnect()
+  })
 })
