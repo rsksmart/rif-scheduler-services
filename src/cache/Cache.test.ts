@@ -23,9 +23,14 @@ describe('Cache', () => {
     const date = addMinutes(new Date(), -2)
 
     const id = await store.save({
-      timestamp: date,
+      index: 1,
+      from: '123',
+      plan: 0,
+      to: '456',
+      data: '',
       gas: 100,
-      transactionIndex: 1,
+      timestamp: date,
+      value: '',
       blockNumber: 1
     })
 
@@ -44,22 +49,37 @@ describe('Cache', () => {
     const date = addMinutes(new Date(), -2)
 
     await store.save({
-      timestamp: date,
+      index: 1,
+      blockNumber: 20,
+      from: '123',
+      plan: 0,
+      to: '456',
+      data: '',
       gas: 100,
-      transactionIndex: 1,
-      blockNumber: 20
+      timestamp: date,
+      value: ''
     })
     await store.save({
-      timestamp: date,
+      index: 2,
+      blockNumber: 90,
+      from: '123',
+      plan: 0,
+      to: '456',
+      data: '',
       gas: 100,
-      transactionIndex: 2,
-      blockNumber: 90
+      timestamp: date,
+      value: ''
     })
     await store.save({
-      timestamp: date,
+      index: 3,
+      blockNumber: 40,
+      from: '123',
+      plan: 0,
+      to: '456',
+      data: '',
       gas: 100,
-      transactionIndex: 3,
-      blockNumber: 40
+      timestamp: date,
+      value: ''
     })
 
     const lastBlockNumber = await store.getLastSyncedBlock()

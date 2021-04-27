@@ -142,7 +142,7 @@ describe('Core', function (this: {
         .send({ ...this.txOptions, value, gas: scheduleGas })
     }
 
-    this.provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
+    this.provider = new OneShotSchedule(this.oneShotScheduleContract.options.address, 10)
   })
 
   test('Should sync transactions after a restart', async () => {

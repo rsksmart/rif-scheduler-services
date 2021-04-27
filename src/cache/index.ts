@@ -1,15 +1,9 @@
 import { Repository } from 'typeorm'
+import IMetatransaction from '../IMetatransaction'
 import { ScheduledTransaction } from './entities'
 
-export interface ITransactionToSchedule {
-  transactionIndex: number;
-  timestamp: Date;
-  gas: number;
-  blockNumber: number;
-}
-
 export interface ICache {
-  save(transaction: ITransactionToSchedule): Promise<number>;
+  save(transaction: IMetatransaction): Promise<number>;
   getLastSyncedBlock(): Promise<number | undefined>;
 }
 
@@ -20,18 +14,23 @@ class Cache implements ICache {
     this.repository = repository
   }
 
-  async save (transaction: ITransactionToSchedule) {
+  async save (transaction: IMetatransaction) {
     const cacheTransaction = await this.repository.findOne({
-      where: { transactionIndex: transaction.transactionIndex }
+      where: { index: transaction.index }
     })
 
     if (cacheTransaction) return cacheTransaction.id
 
     const scheduledTransaction = await this.repository.save(
       new ScheduledTransaction(
-        transaction.transactionIndex,
-        transaction.timestamp.toISOString(),
+        transaction.index,
+        transaction.from,
+        transaction.plan,
+        transaction.to,
+        transaction.data,
         transaction.gas,
+        transaction.timestamp.toISOString(),
+        transaction.value,
         transaction.blockNumber
       )
     )

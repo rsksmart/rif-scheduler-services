@@ -7,6 +7,8 @@ import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
 import { addMinutes } from 'date-fns'
 import loggerFactory from '../loggerFactory'
+import { time } from '@openzeppelin/test-helpers'
+
 const { toBN } = Web3.utils
 
 jest.setTimeout(17000)
@@ -120,7 +122,7 @@ describe('OneShotSchedule', function (this: {
     }
   })
 
-  test('Should get all past events', async () => {
+  test('Should get all past scheduled tx events', async () => {
     const NUMBER_OF_SCHEDULED_TX = 2
     const incData = getMethodSigIncData(this.web3)
     const timestamp = addMinutes(new Date(), 5)
@@ -133,7 +135,7 @@ describe('OneShotSchedule', function (this: {
     //   await this.oneShotScheduleContract.methods.getSchedule(0).call()
     // );
 
-    const provider = new Provider(this.oneShotScheduleContract.options.address)
+    const provider = new Provider(this.oneShotScheduleContract.options.address, 5)
 
     const result = await provider.getPastScheduledTransactions()
 
@@ -148,7 +150,7 @@ describe('OneShotSchedule', function (this: {
   })
 
   test('Should execute callback after schedule a new transaction', async (done) => {
-    const provider = new Provider(this.oneShotScheduleContract.options.address)
+    const provider = new Provider(this.oneShotScheduleContract.options.address, 5)
 
     provider.listenNewScheduledTransactions(async (event) => {
       expect(event).toBeDefined()
@@ -163,13 +165,13 @@ describe('OneShotSchedule', function (this: {
     await this.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
   })
 
-  test('Should not execute the callback when disconnected', async () => {
+  test('Should not execute new scheduled tx callback when disconnected', async () => {
     const logger = loggerFactory()
     const logErrorSpied = jest.spyOn(logger, 'error')
 
     const callback = jest.fn()
 
-    const provider = new Provider(this.oneShotScheduleContract.options.address)
+    const provider = new Provider(this.oneShotScheduleContract.options.address, 5)
 
     provider.disconnect()
 
@@ -181,5 +183,44 @@ describe('OneShotSchedule', function (this: {
 
     expect(logErrorSpied).toHaveBeenCalledWith('The websocket connection is not opened', expect.anything())
     expect(callback).not.toBeCalled()
+  })
+
+  test('Should execute a scheduled tx', async () => {
+    const CONFIRMATIONS_REQUIRED = 10
+
+    const incData = getMethodSigIncData(this.web3)
+    const timestamp = addMinutes(new Date(), 5)
+
+    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
+
+    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
+
+    const [transaction] = await provider.getPastScheduledTransactions()
+
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
+
+    await provider.executeTransaction(transaction)
+
+    await provider.disconnect()
+  })
+
+  test('Should throw error when execute a scheduled tx without the confirmations required', async () => {
+    const CONFIRMATIONS_REQUIRED = 10
+
+    const incData = getMethodSigIncData(this.web3)
+    const timestamp = addMinutes(new Date(), 5)
+
+    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
+
+    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
+
+    const [transaction] = await provider.getPastScheduledTransactions()
+
+    await expect(provider.executeTransaction(transaction))
+      .rejects
+      .toThrow('Minimum confirmations required')
+
+    await provider.disconnect()
   })
 })

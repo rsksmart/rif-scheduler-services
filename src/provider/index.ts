@@ -2,25 +2,17 @@ import Web3 from 'web3'
 import { WebsocketProvider } from 'web3-core/types/index'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
+import IMetatransaction from '../IMetatransaction'
 import loggerFactory from '../loggerFactory'
-
-export interface IMetatransactionAddedValues {
-  index: number;
-  to: string;
-  data: string;
-  gas: number;
-  timestamp: Date;
-  value: string;
-  blockNumber: number;
-}
 
 export interface IProvider {
   getPastScheduledTransactions(
     startFromBlock?: number
-  ): Promise<IMetatransactionAddedValues[]>;
+  ): Promise<IMetatransaction[]>;
   listenNewScheduledTransactions(
-    callback: (eventValues: IMetatransactionAddedValues) => Promise<void>
+    callback: (eventValues: IMetatransaction) => Promise<void>
   ): Promise<void>;
+  executeTransaction(transaction: IMetatransaction): Promise<void>;
   disconnect(): Promise<void>;
 }
 
@@ -30,9 +22,14 @@ class OneShotSchedule implements IProvider {
   private web3: Web3;
   private webSocketProvider: WebsocketProvider;
   private oneShotScheduleContract: any;
+  private confirmationsRequired: number;
 
-  constructor (address: string) {
-    this.webSocketProvider = new Web3.providers.WebsocketProvider(BLOCKCHAIN_URL)
+  constructor (address: string, confirmationsRequired: number) {
+    this.confirmationsRequired = confirmationsRequired
+
+    this.webSocketProvider = new Web3.providers.WebsocketProvider(
+      BLOCKCHAIN_URL
+    )
 
     this.web3 = new Web3(this.webSocketProvider)
 
@@ -42,7 +39,9 @@ class OneShotSchedule implements IProvider {
     )
   }
 
-  async getPastScheduledTransactions (startFromBlock: number = 0): Promise<IMetatransactionAddedValues[]> {
+  async getPastScheduledTransactions (
+    startFromBlock: number = 0
+  ): Promise<IMetatransaction[]> {
     const pastEvents = await this.oneShotScheduleContract.getPastEvents(
       'MetatransactionAdded',
       {
@@ -55,19 +54,46 @@ class OneShotSchedule implements IProvider {
   }
 
   async listenNewScheduledTransactions (
-    callback: (eventValues: IMetatransactionAddedValues) => Promise<void>
+    callback: (eventValues: IMetatransaction) => Promise<void>
   ) {
-    this.oneShotScheduleContract.events
-      .MetatransactionAdded({}, (error, event) => {
+    this.oneShotScheduleContract.events.MetatransactionAdded(
+      {},
+      (error, event) => {
         if (error) {
-          loggerFactory().error('The websocket connection is not opened', error)
+          loggerFactory().error(
+            'The websocket connection is not opened',
+            error
+          )
           return
         }
 
         const newEvent = this.parseEvent(event)
 
         callback(newEvent)
-      })
+      }
+    )
+  }
+
+  async executeTransaction (transaction: IMetatransaction) {
+    const { index, from, blockNumber } = transaction
+
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+
+    const confirmations = currentBlockNumber - blockNumber
+
+    console.log('confirmations', currentBlockNumber, blockNumber, this.confirmationsRequired)
+
+    if (confirmations < this.confirmationsRequired) {
+      throw new Error('Minimum confirmations required')
+    }
+
+    const executeGas = await this.oneShotScheduleContract.methods
+      .execute(index)
+      .estimateGas()
+
+    await this.oneShotScheduleContract.methods
+      .execute(index)
+      .send({ from, gas: executeGas })
   }
 
   async disconnect (): Promise<void> {
@@ -84,9 +110,14 @@ class OneShotSchedule implements IProvider {
     })
   }
 
-  private parseEvent ({ returnValues, blockNumber }): IMetatransactionAddedValues {
+  private parseEvent ({
+    returnValues,
+    blockNumber
+  }): IMetatransaction {
     return {
       index: +returnValues.index,
+      from: returnValues.from,
+      plan: +returnValues.plan,
       to: returnValues.to,
       data: returnValues.data,
       gas: +returnValues.gas,

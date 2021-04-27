@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/rsksmart/rif-scheduler-services#readme",
   "dependencies": {
+    "@openzeppelin/test-helpers": "^0.5.10",
     "date-fns": "^2.20.3",
     "sqlite3": "^5.0.2",
     "tracer": "^1.1.4",

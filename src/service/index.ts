@@ -22,23 +22,13 @@ class Core {
     )
 
     for (const event of pastEvents) {
-      await this.cache.save({
-        blockNumber: event.blockNumber,
-        timestamp: event.timestamp,
-        transactionIndex: event.index,
-        gas: event.gas
-      })
+      await this.cache.save(event)
     }
 
     loggerFactory().debug('Start listening new events')
 
     await this.provider.listenNewScheduledTransactions(async (event) => {
-      await this.cache.save({
-        blockNumber: event.blockNumber,
-        timestamp: event.timestamp,
-        transactionIndex: event.index,
-        gas: event.gas
-      })
+      await this.cache.save(event)
     })
 
     // TODO: Phase 3: trigger scheduled transactions every n minutes
