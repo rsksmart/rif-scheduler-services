@@ -16,6 +16,32 @@ export interface IProvider {
   executeTransaction(transaction: IMetatransaction): Promise<void>;
   disconnect(): Promise<void>;
 }
+export class TxMinimumConfirmationsRequiredError extends Error {
+  constructor (confirmationsRequired: number, currentConfirmations: number) {
+    super(`Requires ${confirmationsRequired} confirmations but has ${currentConfirmations}`)
+
+    // Set the prototype explicitly. (required by typescript)
+    Object.setPrototypeOf(this, TxMinimumConfirmationsRequiredError.prototype)
+  }
+}
+
+export class TxAlreadyExecutedError extends Error {
+  constructor () {
+    super('Already executed')
+
+    // Set the prototype explicitly. (required by typescript)
+    Object.setPrototypeOf(this, TxAlreadyExecutedError.prototype)
+  }
+}
+
+export class TxInvalidError extends Error {
+  constructor () {
+    super('Invalid metatransaction')
+
+    // Set the prototype explicitly. (required by typescript)
+    Object.setPrototypeOf(this, TxInvalidError.prototype)
+  }
+}
 
 // TODO: move this const to OneShotSchedule constructor
 const BLOCKCHAIN_URL = 'ws://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
@@ -92,3 +118,18 @@ class OneShotSchedule implements IProvider {
 }
 
 export default OneShotSchedule
+
+function shallowEqual (a: IMetatransaction, b: IMetatransaction) {
+  for (const key in a) {
+    if (a[key] instanceof Date) {
+      const SECONDS_MARGIN = 2
+      const difference = differenceInSeconds(a[key], b[key])
+      if (Math.abs(difference) > SECONDS_MARGIN) {
+        return false
+      }
+    } else if (a[key] !== b[key]) {
+      return false
+    }
+  }
+  return true
+}

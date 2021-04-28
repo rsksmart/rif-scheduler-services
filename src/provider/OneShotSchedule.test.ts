@@ -218,7 +218,56 @@ describe('OneShotSchedule', function (this: {
 
     await expect(provider.executeTransaction(transaction))
       .rejects
-      .toThrow('Minimum confirmations required')
+      .toThrow(TxMinimumConfirmationsRequiredError)
+
+    await provider.disconnect()
+  })
+
+  test('Should throw error when execute a scheduled tx twice', async () => {
+    const CONFIRMATIONS_REQUIRED = 1
+
+    const incData = getMethodSigIncData(this.web3)
+    const timestamp = addMinutes(new Date(), 5)
+
+    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
+
+    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
+
+    const [transaction] = await provider.getPastScheduledTransactions()
+
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
+
+    await provider.executeTransaction(transaction)
+
+    await expect(provider.executeTransaction(transaction))
+      .rejects
+      .toThrow(TxAlreadyExecutedError)
+
+    await provider.disconnect()
+  })
+
+  test('Should throw error when execute an invalid scheduled tx', async () => {
+    const CONFIRMATIONS_REQUIRED = 1
+
+    const incData = getMethodSigIncData(this.web3)
+    const timestamp = addMinutes(new Date(), 5)
+
+    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
+
+    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
+
+    const [transaction] = await provider.getPastScheduledTransactions()
+
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
+
+    // emulate invalid tx
+    transaction.from = 'changed-account'
+
+    await expect(provider.executeTransaction(transaction))
+      .rejects
+      .toThrow(TxInvalidError)
 
     await provider.disconnect()
   })
