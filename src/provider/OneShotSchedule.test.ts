@@ -1,19 +1,18 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import Provider, { TxMinimumConfirmationsRequiredError, TxAlreadyExecutedError, TxInvalidError } from './index'
+import OneShotSchedule from './OneShotSchedule'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
 import { addMinutes } from 'date-fns'
 import loggerFactory from '../loggerFactory'
-import { time } from '@openzeppelin/test-helpers'
 
 const { toBN } = Web3.utils
 
 jest.setTimeout(17000)
 
-const BLOCKCHAIN_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
+const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 
 const deployContract = async (
   web3: Web3,
@@ -48,7 +47,7 @@ describe('OneShotSchedule', function (this: {
   scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
 }) {
   beforeEach(async () => {
-    this.web3 = new Web3(BLOCKCHAIN_URL)
+    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
     const [from] = await this.web3.eth.getAccounts()
 
     this.txOptions = { from }
@@ -135,7 +134,7 @@ describe('OneShotSchedule', function (this: {
     //   await this.oneShotScheduleContract.methods.getSchedule(0).call()
     // );
 
-    const provider = new Provider(this.oneShotScheduleContract.options.address, 5)
+    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
 
     const result = await provider.getPastScheduledTransactions()
 
@@ -150,7 +149,7 @@ describe('OneShotSchedule', function (this: {
   })
 
   test('Should execute callback after schedule a new transaction', async (done) => {
-    const provider = new Provider(this.oneShotScheduleContract.options.address, 5)
+    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
 
     provider.listenNewScheduledTransactions(async (event) => {
       expect(event).toBeDefined()
@@ -171,9 +170,9 @@ describe('OneShotSchedule', function (this: {
 
     const callback = jest.fn()
 
-    const provider = new Provider(this.oneShotScheduleContract.options.address, 5)
+    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
 
-    provider.disconnect()
+    await provider.disconnect()
 
     provider.listenNewScheduledTransactions(callback)
 
@@ -183,93 +182,5 @@ describe('OneShotSchedule', function (this: {
 
     expect(logErrorSpied).toHaveBeenCalledWith('The websocket connection is not opened', expect.anything())
     expect(callback).not.toBeCalled()
-  })
-
-  test('Should execute a scheduled tx', async () => {
-    const CONFIRMATIONS_REQUIRED = 10
-
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 5)
-
-    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-
-    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
-
-    const [transaction] = await provider.getPastScheduledTransactions()
-
-    const currentBlockNumber = await this.web3.eth.getBlockNumber()
-    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
-
-    await provider.executeTransaction(transaction)
-
-    await provider.disconnect()
-  })
-
-  test('Should throw error when execute a scheduled tx without the confirmations required', async () => {
-    const CONFIRMATIONS_REQUIRED = 10
-
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 5)
-
-    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-
-    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
-
-    const [transaction] = await provider.getPastScheduledTransactions()
-
-    await expect(provider.executeTransaction(transaction))
-      .rejects
-      .toThrow(TxMinimumConfirmationsRequiredError)
-
-    await provider.disconnect()
-  })
-
-  test('Should throw error when execute a scheduled tx twice', async () => {
-    const CONFIRMATIONS_REQUIRED = 1
-
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 5)
-
-    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-
-    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
-
-    const [transaction] = await provider.getPastScheduledTransactions()
-
-    const currentBlockNumber = await this.web3.eth.getBlockNumber()
-    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
-
-    await provider.executeTransaction(transaction)
-
-    await expect(provider.executeTransaction(transaction))
-      .rejects
-      .toThrow(TxAlreadyExecutedError)
-
-    await provider.disconnect()
-  })
-
-  test('Should throw error when execute an invalid scheduled tx', async () => {
-    const CONFIRMATIONS_REQUIRED = 1
-
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 5)
-
-    await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-
-    const provider = new Provider(this.oneShotScheduleContract.options.address, CONFIRMATIONS_REQUIRED)
-
-    const [transaction] = await provider.getPastScheduledTransactions()
-
-    const currentBlockNumber = await this.web3.eth.getBlockNumber()
-    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
-
-    // emulate invalid tx
-    transaction.from = 'changed-account'
-
-    await expect(provider.executeTransaction(transaction))
-      .rejects
-      .toThrow(TxInvalidError)
-
-    await provider.disconnect()
   })
 })

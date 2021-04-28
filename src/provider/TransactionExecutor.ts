@@ -1,21 +1,15 @@
 import Web3 from 'web3'
-import { WebsocketProvider } from 'web3-core/types/index'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import IMetatransaction from '../IMetatransaction'
-import loggerFactory from '../loggerFactory'
 import { differenceInSeconds } from 'date-fns'
+import HDWalletProvider from '@truffle/hdwallet-provider'
+import parseEvent from './parseEvent'
 
-export interface IProvider {
-  getPastScheduledTransactions(
-    startFromBlock?: number
-  ): Promise<IMetatransaction[]>;
-  listenNewScheduledTransactions(
-    callback: (eventValues: IMetatransaction) => Promise<void>
-  ): Promise<void>;
-  executeTransaction(transaction: IMetatransaction): Promise<void>;
-  disconnect(): Promise<void>;
+export interface ITransactionExecutor {
+  execute(transaction: IMetatransaction): Promise<void>;
 }
+
 export class TxMinimumConfirmationsRequiredError extends Error {
   constructor (confirmationsRequired: number, currentConfirmations: number) {
     super(`Requires ${confirmationsRequired} confirmations but has ${currentConfirmations}`)
@@ -43,61 +37,39 @@ export class TxInvalidError extends Error {
   }
 }
 
-const BLOCKCHAIN_URL = 'ws://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
-
-class OneShotSchedule implements IProvider {
+class TransactionExecutor implements ITransactionExecutor {
   private web3: Web3;
-  private webSocketProvider: WebsocketProvider;
+  private hdWalletProvider: HDWalletProvider;
   private oneShotScheduleContract: any;
   private confirmationsRequired: number;
+  private transactionScheduleAddress: string;
+  private mnemonicPhrase: string;
+  private blockchainUrl: string;
 
-  constructor (address: string, confirmationsRequired: number) {
+  constructor (
+    transactionScheduleAddress: string,
+    confirmationsRequired: number,
+    mnemonicPhrase: string,
+    blockchainUrl: string
+  ) {
+    this.transactionScheduleAddress = transactionScheduleAddress
     this.confirmationsRequired = confirmationsRequired
+    this.mnemonicPhrase = mnemonicPhrase
+    this.blockchainUrl = blockchainUrl
 
-    this.webSocketProvider = new Web3.providers.WebsocketProvider(
-      BLOCKCHAIN_URL
-    )
+    this.hdWalletProvider = new HDWalletProvider({
+      mnemonic: this.mnemonicPhrase,
+      providerOrUrl: this.blockchainUrl,
+      numberOfAddresses: 1,
+      shareNonce: true,
+      derivationPath: "m/44'/137'/0'/0/"
+    })
 
-    this.web3 = new Web3(this.webSocketProvider)
+    this.web3 = new Web3(this.hdWalletProvider)
 
     this.oneShotScheduleContract = new this.web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
-      address
-    )
-  }
-
-  async getPastScheduledTransactions (
-    startFromBlock: number = 0
-  ): Promise<IMetatransaction[]> {
-    const pastEvents = await this.oneShotScheduleContract.getPastEvents(
-      'MetatransactionAdded',
-      {
-        fromBlock: startFromBlock,
-        toBlock: 'latest'
-      }
-    )
-
-    return pastEvents.map(this.parseEvent)
-  }
-
-  async listenNewScheduledTransactions (
-    callback: (eventValues: IMetatransaction) => Promise<void>
-  ) {
-    this.oneShotScheduleContract.events.MetatransactionAdded(
-      {},
-      (error, event) => {
-        if (error) {
-          loggerFactory().error(
-            'The websocket connection is not opened',
-            error
-          )
-          return
-        }
-
-        const newEvent = this.parseEvent(event)
-
-        callback(newEvent)
-      }
+      this.transactionScheduleAddress
     )
   }
 
@@ -132,18 +104,18 @@ class OneShotSchedule implements IProvider {
       throw new TxAlreadyExecutedError()
     }
 
-    const currentTransaction: IMetatransaction = this.parseEvent({
+    const currentTransaction = parseEvent({
       returnValues: {
         data: contractTransaction[txKeys.data],
         from: contractTransaction[txKeys.from],
         gas: contractTransaction[txKeys.gas],
-        index: transaction.index, // not available in the contract
+        index: transaction.index, // not available in the contract response
         plan: contractTransaction[txKeys.plan],
         timestamp: contractTransaction[txKeys.timestamp],
         to: contractTransaction[txKeys.to],
         value: contractTransaction[txKeys.value]
       },
-      blockNumber: transaction.blockNumber // not available in the contract
+      blockNumber: transaction.blockNumber // not available in the contract response
     })
 
     if (!shallowEqual(transaction, currentTransaction)) {
@@ -151,54 +123,32 @@ class OneShotSchedule implements IProvider {
     }
   }
 
-  async executeTransaction (transaction: IMetatransaction) {
-    const { index, from } = transaction
+  async execute (transaction: IMetatransaction) {
+    const { index } = transaction
 
     await this.ensureConfirmations(transaction)
     await this.ensureIsStillValid(transaction)
 
-    const executeGas = await this.oneShotScheduleContract.methods
+    const transactionSchedule = new this.web3.eth.Contract(
+        OneShotScheduleData.abi as AbiItem[],
+        this.transactionScheduleAddress
+    )
+
+    const [providerAccountAddress] = await this.web3.eth.getAccounts()
+
+    const executeGas = await transactionSchedule.methods
       .execute(index)
       .estimateGas()
 
-    await this.oneShotScheduleContract.methods
+    await transactionSchedule.methods
       .execute(index)
-      .send({ from, gas: executeGas })
-  }
+      .send({ from: providerAccountAddress, gas: executeGas })
 
-  async disconnect (): Promise<void> {
-    return new Promise((resolve) => {
-      this.webSocketProvider.on('end', () => {
-        // console.log('WS closed')
-        resolve()
-      })
-      this.webSocketProvider.on('error', () => {
-        loggerFactory().error('Failed while the websocket was disconnecting')
-        resolve()
-      })
-      this.webSocketProvider.disconnect(0, 'close app')
-    })
-  }
-
-  private parseEvent ({
-    returnValues,
-    blockNumber
-  }): IMetatransaction {
-    return {
-      index: +returnValues.index,
-      from: returnValues.from,
-      plan: +returnValues.plan,
-      to: returnValues.to,
-      data: returnValues.data,
-      gas: +returnValues.gas,
-      timestamp: new Date(+returnValues.timestamp * 1000),
-      value: returnValues.value,
-      blockNumber
-    }
+    this.hdWalletProvider.engine.stop()
   }
 }
 
-export default OneShotSchedule
+export default TransactionExecutor
 
 function shallowEqual (a: IMetatransaction, b: IMetatransaction) {
   for (const key in a) {

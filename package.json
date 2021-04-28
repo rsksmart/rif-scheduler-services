@@ -7,9 +7,9 @@
   "scripts": {
     "start": "nodemon",
     "ganache": "npx ganache-cli",
-    "test": "npx jest src/*/* --verbose --coverage",
-    "test:ci": "npx jest src/*/* --coverage --ci",
-    "test:watch": "npx jest src/*/* --verbose --coverage --watch",
+    "test": "npx jest src/*/* --verbose --coverage --runInBand --forceExit",
+    "test:ci": "npx jest src/*/* --coverage --ci --runInBand --forceExit",
+    "test:watch": "npx jest src/*/* --verbose --coverage --watch --runInBand --forceExit",
     "build": "rimraf ./lib && tsc",
     "lint": "npx eslint ./src --ext .json,.js,.ts"
   },
@@ -26,6 +26,7 @@
   "homepage": "https://github.com/rsksmart/rif-scheduler-services#readme",
   "dependencies": {
     "@openzeppelin/test-helpers": "^0.5.10",
+    "@truffle/hdwallet-provider": "^1.3.0",
     "date-fns": "^2.20.3",
     "sqlite3": "^5.0.2",
     "tracer": "^1.1.4",

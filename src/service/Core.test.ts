@@ -13,7 +13,7 @@ import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
-import OneShotSchedule, { IProvider } from '../provider'
+import OneShotSchedule, { IProvider } from '../provider/OneShotSchedule'
 import Core from './index'
 
 const { toBN } = Web3.utils
@@ -142,7 +142,7 @@ describe('Core', function (this: {
         .send({ ...this.txOptions, value, gas: scheduleGas })
     }
 
-    this.provider = new OneShotSchedule(this.oneShotScheduleContract.options.address, 10)
+    this.provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
   })
 
   test('Should sync transactions after a restart', async () => {

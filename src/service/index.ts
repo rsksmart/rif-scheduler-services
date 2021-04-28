@@ -1,6 +1,6 @@
 import { ICache } from '../cache'
 import loggerFactory from '../loggerFactory'
-import { IProvider } from '../provider'
+import { IProvider } from '../provider/OneShotSchedule'
 
 class Core {
   private provider: IProvider;
