@@ -229,6 +229,7 @@ class TransactionExecutor implements ITransactionExecutor {
 
   async execute (transaction: IMetatransaction) {
 <<<<<<< HEAD
+<<<<<<< HEAD
     try {
       const { index } = transaction
 
@@ -254,28 +255,37 @@ class TransactionExecutor implements ITransactionExecutor {
     }
 =======
     const { index } = transaction
+=======
+    try {
+      const { index } = transaction
+>>>>>>> tx executor: fix tests hangs (yellow message)
 
-    await this.ensureConfirmations(transaction)
-    await this.ensureIsStillValid(transaction)
+      await this.ensureConfirmations(transaction)
+      await this.ensureIsStillValid(transaction)
 
-    const transactionSchedule = new this.web3.eth.Contract(
-        OneShotScheduleData.abi as AbiItem[],
-        this.transactionScheduleAddress
-    )
+      const transactionSchedule = new this.web3.eth.Contract(
+          OneShotScheduleData.abi as AbiItem[],
+          this.transactionScheduleAddress
+      )
 
-    const [providerAccountAddress] = await this.web3.eth.getAccounts()
+      const [providerAccountAddress] = await this.web3.eth.getAccounts()
 
-    const executeGas = await transactionSchedule.methods
-      .execute(index)
-      .estimateGas()
+      const executeGas = await transactionSchedule.methods
+        .execute(index)
+        .estimateGas()
 
-    await transactionSchedule.methods
-      .execute(index)
-      .send({ from: providerAccountAddress, gas: executeGas })
-
+<<<<<<< HEAD
     this.hdWalletProvider.engine.stop()
 >>>>>>> added tx executor with hdwallet:src/provider/TransactionExecutor.ts
 >>>>>>> added tx executor with hdwallet
+=======
+      await transactionSchedule.methods
+        .execute(index)
+        .send({ from: providerAccountAddress, gas: executeGas })
+    } finally {
+      this.hdWalletProvider.engine.stop()
+    }
+>>>>>>> tx executor: fix tests hangs (yellow message)
   }
 }
 
