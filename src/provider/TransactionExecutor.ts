@@ -3,6 +3,7 @@ import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import IMetatransaction from '../IMetatransaction'
 <<<<<<< HEAD
+<<<<<<< HEAD
 import HDWalletProvider from '@truffle/hdwallet-provider'
 =======
 <<<<<<< HEAD:src/provider/OneShotSchedule.ts
@@ -13,11 +14,15 @@ import HDWalletProvider from '@truffle/hdwallet-provider'
 >>>>>>> added tx executor with hdwallet:src/provider/TransactionExecutor.ts
 import parseEvent from './parseEvent'
 >>>>>>> added tx executor with hdwallet
+=======
+import HDWalletProvider from '@truffle/hdwallet-provider'
+>>>>>>> review changes
 
 export interface ITransactionExecutor {
   execute(transaction: IMetatransaction): Promise<void>;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 class TransactionExecutor implements ITransactionExecutor {
   private web3: Web3;
@@ -57,6 +62,8 @@ const BLOCKCHAIN_URL = 'ws://127.0.0.1:8545' // "https://public-node.testnet.rsk
 
 class OneShotSchedule implements IProvider {
 =======
+=======
+>>>>>>> review changes
 class TransactionExecutor implements ITransactionExecutor {
 >>>>>>> added tx executor with hdwallet:src/provider/TransactionExecutor.ts
   private web3: Web3;
@@ -169,6 +176,7 @@ class TransactionExecutor implements ITransactionExecutor {
 
     if (confirmations < this.confirmationsRequired) {
 <<<<<<< HEAD
+<<<<<<< HEAD
       throw new Error('Minimum confirmations required')
     }
   }
@@ -185,24 +193,21 @@ class TransactionExecutor implements ITransactionExecutor {
       throw new Error('Already executed')
 =======
       throw new TxMinimumConfirmationsRequiredError(this.confirmationsRequired, confirmations)
+=======
+      throw new Error('Minimum confirmations required')
+>>>>>>> review changes
     }
   }
 
-  private async ensureIsStillValid (transaction: IMetatransaction) {
+  private async ensureNotExecuted (transaction: IMetatransaction) {
+    // TODO: once we have a getState method, change this call to use it
+
     const contractTransaction = await this.oneShotScheduleContract.methods
       .getSchedule(transaction.index).call()
 
-    const txKeys = {
-      from: '0',
-      plan: '1',
-      to: '2',
-      data: '3',
-      gas: '4',
-      timestamp: '5',
-      value: '6',
-      executed: '7'
-    }
+    const isExecutedKey = '7'
 
+<<<<<<< HEAD
     if (contractTransaction[txKeys.executed]) {
       throw new TxAlreadyExecutedError()
     }
@@ -224,6 +229,10 @@ class TransactionExecutor implements ITransactionExecutor {
     if (!shallowEqual(transaction, currentTransaction)) {
       throw new TxInvalidError()
 >>>>>>> added tx executor with hdwallet
+=======
+    if (contractTransaction[isExecutedKey]) {
+      throw new Error('Already executed')
+>>>>>>> review changes
     }
   }
 
@@ -261,7 +270,7 @@ class TransactionExecutor implements ITransactionExecutor {
 >>>>>>> tx executor: fix tests hangs (yellow message)
 
       await this.ensureConfirmations(transaction)
-      await this.ensureIsStillValid(transaction)
+      await this.ensureNotExecuted(transaction)
 
       const transactionSchedule = new this.web3.eth.Contract(
           OneShotScheduleData.abi as AbiItem[],
@@ -291,6 +300,7 @@ class TransactionExecutor implements ITransactionExecutor {
 
 export default TransactionExecutor
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 function shallowEqual (a: IMetatransaction, b: IMetatransaction) {
@@ -308,3 +318,5 @@ function shallowEqual (a: IMetatransaction, b: IMetatransaction) {
   return true
 }
 >>>>>>> added tx executor with hdwallet
+=======
+>>>>>>> review changes
