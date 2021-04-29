@@ -1,5 +1,5 @@
-import { deleteDatabase, resetDatabase, createSqliteConnection } from './db'
-import { getConnection } from 'typeorm'
+import { deleteDatabase, resetDatabase, createDbConnection } from './db'
+import { Connection } from 'typeorm'
 import { ScheduledTransaction } from './entities'
 import Cache from './index'
 import { addMinutes } from 'date-fns'
@@ -8,15 +8,21 @@ jest.setTimeout(7000)
 
 const DB_NAME = 'test_db_store'
 
-describe('Cache', () => {
+describe('Cache', function (this: {
+  dbConnection: Connection;
+}) {
   afterEach(async () => {
-    await resetDatabase(getConnection())
-    await deleteDatabase(getConnection(), DB_NAME)
+    if (this.dbConnection && this.dbConnection.isConnected) {
+      await resetDatabase(this.dbConnection)
+      await deleteDatabase(this.dbConnection, DB_NAME)
+    }
+  })
+  beforeEach(async () => {
+    this.dbConnection = await createDbConnection(DB_NAME)
   })
 
   test('Should add a new scheduled transaction', async () => {
-    const connection = await createSqliteConnection(DB_NAME)
-    const repository = connection.getRepository(ScheduledTransaction)
+    const repository = this.dbConnection.getRepository(ScheduledTransaction)
 
     const store = new Cache(repository)
 
@@ -41,8 +47,7 @@ describe('Cache', () => {
   })
 
   test('Should get latest blockNumber', async () => {
-    const connection = await createSqliteConnection(DB_NAME)
-    const repository = connection.getRepository(ScheduledTransaction)
+    const repository = this.dbConnection.getRepository(ScheduledTransaction)
 
     const store = new Cache(repository)
 

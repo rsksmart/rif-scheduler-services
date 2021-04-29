@@ -1,9 +1,9 @@
 import {
   deleteDatabase,
   resetDatabase,
-  createSqliteConnection
+  createDbConnection
 } from '../cache/db'
-import { getConnection, Repository } from 'typeorm'
+import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../cache/entities'
 import Cache, { ICache } from '../cache'
 import { addMinutes } from 'date-fns'
@@ -18,7 +18,7 @@ import Core from './index'
 
 const { toBN } = Web3.utils
 
-jest.setTimeout(17000)
+jest.setTimeout(27000)
 
 const BLOCKCHAIN_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 
@@ -48,6 +48,7 @@ const deployContract = async (
 }
 
 describe('Core', function (this: {
+  dbConnection: Connection;
   cache: ICache;
   provider: IProvider;
   repository: Repository<ScheduledTransaction>;
@@ -60,13 +61,15 @@ describe('Core', function (this: {
   scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
 }) {
   afterEach(async () => {
-    await resetDatabase(getConnection())
-    await deleteDatabase(getConnection(), DB_NAME)
+    if (this.dbConnection && this.dbConnection.isConnected) {
+      await resetDatabase(this.dbConnection)
+      await deleteDatabase(this.dbConnection, DB_NAME)
+    }
   })
   beforeEach(async () => {
-    const connection = await createSqliteConnection(DB_NAME)
+    this.dbConnection = await createDbConnection(DB_NAME)
 
-    this.repository = connection.getRepository(ScheduledTransaction)
+    this.repository = this.dbConnection.getRepository(ScheduledTransaction)
 
     this.cache = new Cache(this.repository)
 
