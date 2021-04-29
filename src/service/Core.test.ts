@@ -150,7 +150,6 @@ describe('Core', function (this: {
 
   test('Should sync transactions after a restart', async () => {
     // TODO: if we stop the service then fails to reconnect
-
     const incData = getMethodSigIncData(this.web3)
     const timestamp1 = addMinutes(new Date(), 5)
 
@@ -163,6 +162,7 @@ describe('Core', function (this: {
     await service.start()
     // await service.stop()
 
+    await sleep(2000)
     const firstCount = await this.repository.count()
 
     expect(firstCount).toBe(2)
@@ -174,6 +174,7 @@ describe('Core', function (this: {
 
     // await service.start()
 
+    await sleep(2000)
     const secondCount = await this.repository.count()
 
     expect(secondCount).toBe(4)
@@ -200,3 +201,7 @@ describe('Core', function (this: {
     await service.stop()
   })
 })
+
+function sleep (ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
