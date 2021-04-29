@@ -7,9 +7,9 @@
   "scripts": {
     "start": "nodemon",
     "ganache": "npx ganache-cli",
-    "test": "npx jest src/*/* --verbose --coverage",
-    "test:ci": "npx jest src/*/* --coverage --ci",
-    "test:watch": "npx jest src/*/* --verbose --coverage --watch",
+    "test": "npx jest src/*/* --verbose --coverage --runInBand",
+    "test:ci": "npx jest src/*/* --coverage --ci --runInBand",
+    "test:watch": "npx jest src/*/* --verbose --coverage --watch --runInBand",
     "build": "rimraf ./lib && tsc",
     "lint": "npx eslint ./src --ext .json,.js,.ts"
   },
