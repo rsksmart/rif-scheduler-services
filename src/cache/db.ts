@@ -2,14 +2,15 @@ import { Connection, createConnection } from 'typeorm'
 import fs from 'fs'
 import Entities from './entities'
 
-export const createSqliteConnection = (database: string) =>
+export const createDbConnection = (database: string) =>
   createConnection({
     type: 'sqlite',
     database,
     entities: Entities,
     logging: false,
     dropSchema: true,
-    synchronize: true
+    synchronize: true,
+    name: database
   })
 
 export const resetDatabase = async (dbConnection: Connection) => {

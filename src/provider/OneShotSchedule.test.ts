@@ -1,17 +1,18 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import Provider from './index'
+import OneShotSchedule from './OneShotSchedule'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
 import { addMinutes } from 'date-fns'
 import loggerFactory from '../loggerFactory'
+
 const { toBN } = Web3.utils
 
 jest.setTimeout(17000)
 
-const BLOCKCHAIN_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
+const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 
 const deployContract = async (
   web3: Web3,
@@ -46,7 +47,7 @@ describe('OneShotSchedule', function (this: {
   scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
 }) {
   beforeEach(async () => {
-    this.web3 = new Web3(BLOCKCHAIN_URL)
+    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
     const [from] = await this.web3.eth.getAccounts()
 
     this.txOptions = { from }
@@ -120,7 +121,7 @@ describe('OneShotSchedule', function (this: {
     }
   })
 
-  test('Should get all past events', async () => {
+  test('Should get all past scheduled tx events', async () => {
     const NUMBER_OF_SCHEDULED_TX = 2
     const incData = getMethodSigIncData(this.web3)
     const timestamp = addMinutes(new Date(), 5)
@@ -133,7 +134,7 @@ describe('OneShotSchedule', function (this: {
     //   await this.oneShotScheduleContract.methods.getSchedule(0).call()
     // );
 
-    const provider = new Provider(this.oneShotScheduleContract.options.address)
+    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
 
     const result = await provider.getPastScheduledTransactions()
 
@@ -148,7 +149,7 @@ describe('OneShotSchedule', function (this: {
   })
 
   test('Should execute callback after schedule a new transaction', async (done) => {
-    const provider = new Provider(this.oneShotScheduleContract.options.address)
+    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
 
     provider.listenNewScheduledTransactions(async (event) => {
       expect(event).toBeDefined()
@@ -163,15 +164,15 @@ describe('OneShotSchedule', function (this: {
     await this.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
   })
 
-  test('Should not execute the callback when disconnected', async () => {
+  test('Should not execute new scheduled tx callback when disconnected', async () => {
     const logger = loggerFactory()
     const logErrorSpied = jest.spyOn(logger, 'error')
 
     const callback = jest.fn()
 
-    const provider = new Provider(this.oneShotScheduleContract.options.address)
+    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
 
-    provider.disconnect()
+    await provider.disconnect()
 
     provider.listenNewScheduledTransactions(callback)
 
