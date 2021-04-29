@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import TransactionExecutor, { TxMinimumConfirmationsRequiredError, TxAlreadyExecutedError, TxInvalidError } from './TransactionExecutor'
+import TransactionExecutor from './TransactionExecutor'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
@@ -178,7 +178,7 @@ describe('TransactionExecutor', function (this: {
 
     await expect(txExecutor.execute(transaction))
       .rejects
-      .toThrow(TxMinimumConfirmationsRequiredError)
+      .toThrow('Minimum confirmations required')
   })
 
   test('Should throw error when execute a scheduled tx twice', async () => {
@@ -203,32 +203,6 @@ describe('TransactionExecutor', function (this: {
 
     await expect(txExecutor.execute(transaction))
       .rejects
-      .toThrow(TxAlreadyExecutedError)
-  })
-
-  test('Should throw error when execute an invalid scheduled tx', async () => {
-    const CONFIRMATIONS_REQUIRED = 1
-
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 5)
-
-    let transaction = await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-
-    const txExecutor = new TransactionExecutor(
-      this.oneShotScheduleContract.options.address,
-      CONFIRMATIONS_REQUIRED,
-      MNEMONIC_PHRASE,
-      BLOCKCHAIN_HTTP_URL
-    )
-
-    const currentBlockNumber = await this.web3.eth.getBlockNumber()
-    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
-
-    // emulates invalid tx == something changed
-    transaction = { ...transaction, value: '999' }
-
-    await expect(txExecutor.execute(transaction))
-      .rejects
-      .toThrow(TxInvalidError)
+      .toThrow('Already executed')
   })
 })
