@@ -11,7 +11,8 @@ export class ScheduledTransaction {
     gas: number,
     timestamp: string,
     value: string,
-    blockNumber: number
+    blockNumber: number,
+    status: string
   ) {
     this.index = index
     this.from = from
@@ -22,6 +23,7 @@ export class ScheduledTransaction {
     this.timestamp = timestamp
     this.value = value
     this.blockNumber = blockNumber
+    this.status = status
   }
 
   @PrimaryGeneratedColumn()
@@ -55,6 +57,9 @@ export class ScheduledTransaction {
   @Column('integer')
   @Index({ unique: false })
   blockNumber!: number;
+
+  @Column('text')
+  status!: string;
 }
 
 export default [ScheduledTransaction]
