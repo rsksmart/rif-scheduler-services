@@ -13,7 +13,7 @@ import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
-import { SchedulingsListener, Recoverer } from '../model'
+import { Recoverer, Listener } from '../model'
 import Core from './Core'
 
 const { toBN } = Web3.utils
@@ -144,7 +144,7 @@ describe('Core', function (this: {
     }
 
     const cache = new Cache(this.repository)
-    const listener = new SchedulingsListener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
+    const listener = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
     const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.oneShotScheduleContract.options.address)
 
     this.core = new Core(recoverer, listener, cache)

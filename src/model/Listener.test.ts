@@ -1,12 +1,11 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import { SchedulingsListener } from './Listener'
+import { Listener, newScheduledTransactionsError } from './Listener'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
 import { addMinutes } from 'date-fns'
-import loggerFactory from '../loggerFactory'
 
 const { toBN } = Web3.utils
 
@@ -119,7 +118,7 @@ describe('SchedulingsListener', function (this: {
   })
 
   test('Should execute callback after schedule a new transaction', async (done) => {
-    const provider = new SchedulingsListener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
+    const provider = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
 
     provider.listenNewScheduledTransactions(async (event) => {
       expect(event).toBeDefined()
@@ -135,22 +134,23 @@ describe('SchedulingsListener', function (this: {
   })
 
   test('Should not execute new scheduled tx callback when disconnected', async () => {
-    const logger = loggerFactory()
-    const logErrorSpied = jest.spyOn(logger, 'error')
+    expect.assertions(2)
 
     const callback = jest.fn()
 
-    const provider = new SchedulingsListener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
+    const listener = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
 
-    await provider.disconnect()
+    listener.on(newScheduledTransactionsError, (error) => {
+      expect(error.message).toEqual('connection not open on send()')
+      expect(callback).not.toBeCalled()
+    })
 
-    provider.listenNewScheduledTransactions(callback)
+    listener.listenNewScheduledTransactions(callback)
+
+    await listener.disconnect()
 
     const timestamp = addMinutes(new Date(), 15)
 
     await this.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
-
-    expect(logErrorSpied).toHaveBeenCalledWith('The websocket connection is not opened', expect.anything())
-    expect(callback).not.toBeCalled()
   })
 })
