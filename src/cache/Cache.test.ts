@@ -1,7 +1,7 @@
 import { deleteDatabase, resetDatabase, createDbConnection } from './db'
 import { Connection } from 'typeorm'
 import { ScheduledTransaction } from './entities'
-import Cache from './index'
+import Cache from './Cache'
 import { addMinutes } from 'date-fns'
 import { EMetatransactionStatus } from '../IMetatransaction'
 
@@ -234,5 +234,47 @@ describe('Cache', function (this: {
     expect(count).toBe(1)
     expect(initialStatus).not.toBe(newStatus)
     expect(newStatus).toBe(EMetatransactionStatus.executed)
+  })
+
+  test('Should be able to save a reason for the status change', async () => {
+    const repository = this.dbConnection.getRepository(ScheduledTransaction)
+
+    const store = new Cache(repository)
+
+    const date = addMinutes(new Date(), -2)
+    const index = 1
+
+    await store.save({
+      index,
+      from: '123',
+      plan: 0,
+      to: '456',
+      data: '',
+      gas: 100,
+      timestamp: date,
+      value: '',
+      blockNumber: 1
+    })
+
+    const count = await repository.count()
+    const initialStatus = (await repository.findOne({
+      where: {
+        index
+      }
+    }))?.status
+
+    await store.changeStatus(index, EMetatransactionStatus.failed, 'Failed because it`s a test')
+
+    const result = (await repository.findOne({
+      where: {
+        index
+      }
+    }))
+
+    expect(count).toBe(1)
+    expect(result).toBeDefined()
+    expect(initialStatus).not.toBe(result?.status)
+    expect(result?.status).toBe(EMetatransactionStatus.failed)
+    expect(result?.reason).toBe('Failed because it`s a test')
   })
 })

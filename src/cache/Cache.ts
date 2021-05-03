@@ -6,6 +6,7 @@ export interface ICache {
   save(transaction: IMetatransaction): Promise<number>;
   getLastSyncedBlock(): Promise<number | undefined>;
   getScheduledTransactionsTo (timestamp: Date): Promise<IMetatransaction[]>;
+  changeStatus (index: number, status: EMetatransactionStatus, reason?: string): Promise<void>;
 }
 
 class Cache implements ICache {
@@ -78,8 +79,9 @@ class Cache implements ICache {
 
   async changeStatus (
     index: number,
-    status: EMetatransactionStatus
-  ) {
+    status: EMetatransactionStatus,
+    reason?: string
+  ): Promise<void> {
     const scheduledTransaction = await this.repository.findOne({
       where: {
         index
@@ -87,7 +89,9 @@ class Cache implements ICache {
     })
 
     if (scheduledTransaction) {
+      scheduledTransaction.reason = reason
       scheduledTransaction.status = status
+
       await this.repository.save(scheduledTransaction)
     }
   }

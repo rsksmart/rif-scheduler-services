@@ -5,7 +5,7 @@ import {
 } from '../cache/db'
 import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../cache/entities'
-import Cache, { ICache } from '../cache'
+import Cache, { ICache } from '../cache/Cache'
 import { addMinutes } from 'date-fns'
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
@@ -14,7 +14,7 @@ import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
 import OneShotSchedule, { IProvider } from '../provider/OneShotSchedule'
-import Core from './index'
+import Core from './Core'
 
 const { toBN } = Web3.utils
 
@@ -151,7 +151,7 @@ describe('Core', function (this: {
   test('Should sync transactions after a restart', async () => {
     // TODO: if we stop the service then fails to reconnect
     const incData = getMethodSigIncData(this.web3)
-    const timestamp1 = addMinutes(new Date(), 5)
+    const timestamp1 = addMinutes(new Date(), 15)
 
     for (let i = 0; i < 2; i++) {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp1)
@@ -167,7 +167,7 @@ describe('Core', function (this: {
 
     expect(firstCount).toBe(2)
 
-    const timestamp2 = addMinutes(new Date(), 5)
+    const timestamp2 = addMinutes(new Date(), 15)
     for (let i = 0; i < 2; i++) {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp2)
     }
@@ -188,7 +188,7 @@ describe('Core', function (this: {
     await service.start()
 
     const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 5)
+    const timestamp = addMinutes(new Date(), 15)
 
     for (let i = 0; i < 2; i++) {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp)

@@ -1,8 +1,8 @@
-import { ICache } from '../cache'
+import { ICache } from '../cache/Cache'
 import loggerFactory from '../loggerFactory'
 import { IProvider } from '../provider/OneShotSchedule'
 
-class Core {
+class Core { // FIXME: name proposal: TransactionsScheduleOrchestrator
   private provider: IProvider;
   private cache: ICache;
 

@@ -60,6 +60,9 @@ export class ScheduledTransaction {
 
   @Column('text')
   status!: string;
+
+  @Column('text', { nullable: true })
+  reason!: string | undefined;
 }
 
 export default [ScheduledTransaction]
