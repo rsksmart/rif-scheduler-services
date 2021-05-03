@@ -19,7 +19,7 @@ export interface IProvider {
 // TODO: move this const to OneShotSchedule constructor
 const BLOCKCHAIN_URL = 'ws://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 
-class OneShotSchedule implements IProvider {
+class OneShotSchedule implements IProvider { // FIXME: name proposal: TransactionsObserver
   private web3: Web3;
   private webSocketProvider: WebsocketProvider;
   private oneShotScheduleContract: any;
