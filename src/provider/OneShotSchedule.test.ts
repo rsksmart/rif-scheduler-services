@@ -65,10 +65,6 @@ describe('OneShotSchedule', function (this: {
       [from, toBN('1000000000000000000000'), 'RIFOS', 'RIF']
     )
 
-    // console.log('balance',
-    //   await this.token.methods.balanceOf(from).call()
-    // )
-
     this.counter = await deployContract(
       this.web3,
       CounterData.abi as AbiItem[],
@@ -129,10 +125,6 @@ describe('OneShotSchedule', function (this: {
     for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp)
     }
-
-    // console.log(
-    //   await this.oneShotScheduleContract.methods.getSchedule(0).call()
-    // );
 
     const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
 
