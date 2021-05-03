@@ -1,7 +1,7 @@
 import { ICache } from '../cache/Cache'
 import { EMetatransactionStatus } from '../IMetatransaction'
 import loggerFactory from '../loggerFactory'
-import { ITransactionExecutor } from '../provider/TransactionExecutor'
+import { ITransactionExecutor } from '../model/TransactionExecutor'
 
 export interface ITransactionsCollector {
     collectAndExecute(): Promise<void>

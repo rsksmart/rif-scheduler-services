@@ -6,52 +6,24 @@ import IMetatransaction from '../IMetatransaction'
 import loggerFactory from '../loggerFactory'
 import parseEvent from './parseEvent'
 
-export interface IProvider {
-  getPastScheduledTransactions(
-    startFromBlock?: number
-  ): Promise<IMetatransaction[]>;
-  listenNewScheduledTransactions(
-    callback: (eventValues: IMetatransaction) => Promise<void>
-  ): Promise<void>;
-  disconnect(): Promise<void>;
-}
-
-// TODO: move this const to OneShotSchedule constructor
-const BLOCKCHAIN_URL = 'ws://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
-
-class OneShotSchedule implements IProvider { // FIXME: name proposal: TransactionsObserver
-  private web3: Web3;
+export class SchedulingsListener {
   private webSocketProvider: WebsocketProvider;
   private oneShotScheduleContract: any;
   private transactionScheduleAddress: string;
 
-  constructor (transactionScheduleAddress: string) {
+  constructor (rpcUrl: string, transactionScheduleAddress: string) {
     this.transactionScheduleAddress = transactionScheduleAddress
 
     this.webSocketProvider = new Web3.providers.WebsocketProvider(
-      BLOCKCHAIN_URL
+      rpcUrl
     )
 
-    this.web3 = new Web3(this.webSocketProvider)
+    const web3 = new Web3(this.webSocketProvider)
 
-    this.oneShotScheduleContract = new this.web3.eth.Contract(
+    this.oneShotScheduleContract = new web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
       this.transactionScheduleAddress
     )
-  }
-
-  async getPastScheduledTransactions (
-    startFromBlock: number = 0
-  ): Promise<IMetatransaction[]> {
-    const pastEvents = await this.oneShotScheduleContract.getPastEvents(
-      'MetatransactionAdded',
-      {
-        fromBlock: startFromBlock,
-        toBlock: 'latest'
-      }
-    )
-
-    return pastEvents.map(parseEvent)
   }
 
   async listenNewScheduledTransactions (
@@ -89,5 +61,3 @@ class OneShotSchedule implements IProvider { // FIXME: name proposal: Transactio
     })
   }
 }
-
-export default OneShotSchedule

@@ -1,7 +1,8 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import OneShotSchedule from './OneShotSchedule'
+import { SchedulingsRecoverer } from './SchedulingsRecoverer'
+import { SchedulingsListener } from './SchedulingsListener'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
@@ -13,6 +14,7 @@ const { toBN } = Web3.utils
 jest.setTimeout(17000)
 
 const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
+const BLOCKCHAIN_WS_URL = 'ws://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 
 const deployContract = async (
   web3: Web3,
@@ -126,9 +128,9 @@ describe('OneShotSchedule', function (this: {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp)
     }
 
-    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
+    const transactionRecoverer = new SchedulingsRecoverer(BLOCKCHAIN_HTTP_URL, this.oneShotScheduleContract.options.address)
 
-    const result = await provider.getPastScheduledTransactions()
+    const result = await transactionRecoverer.getPastScheduledTransactions()
 
     expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
 
@@ -136,12 +138,10 @@ describe('OneShotSchedule', function (this: {
       expect(result[i].index).toBe(i)
       expect(result[i].blockNumber).toBeGreaterThan(0)
     }
-
-    await provider.disconnect()
   })
 
   test('Should execute callback after schedule a new transaction', async (done) => {
-    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
+    const provider = new SchedulingsListener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
 
     provider.listenNewScheduledTransactions(async (event) => {
       expect(event).toBeDefined()
@@ -162,7 +162,7 @@ describe('OneShotSchedule', function (this: {
 
     const callback = jest.fn()
 
-    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
+    const provider = new SchedulingsListener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
 
     await provider.disconnect()
 

@@ -13,7 +13,7 @@ import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
-import OneShotSchedule, { IProvider } from '../provider/OneShotSchedule'
+import { OneShotSchedule, TransactionRecoverer } from '../model'
 import Core from './Core'
 
 const { toBN } = Web3.utils
@@ -59,6 +59,7 @@ describe('Core', function (this: {
   plans: any[],
   web3: Web3;
   scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
+  core: Core
 }) {
   afterEach(async () => {
     if (this.dbConnection && this.dbConnection.isConnected) {
@@ -71,9 +72,6 @@ describe('Core', function (this: {
 
     this.repository = this.dbConnection.getRepository(ScheduledTransaction)
 
-    this.cache = new Cache(this.repository)
-
-    // ---
     this.web3 = new Web3(BLOCKCHAIN_URL)
     const [from] = await this.web3.eth.getAccounts()
     this.txOptions = { from }
@@ -145,7 +143,11 @@ describe('Core', function (this: {
         .send({ ...this.txOptions, value, gas: scheduleGas })
     }
 
-    this.provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
+    const cache = new Cache(this.repository)
+    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
+    const recoverer = new TransactionRecoverer(this.oneShotScheduleContract.options.address)
+
+    this.core = new Core(provider, recoverer, cache)
   })
 
   test('Should sync transactions after a restart', async () => {
@@ -157,9 +159,7 @@ describe('Core', function (this: {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp1)
     }
 
-    const service = new Core(this.provider, this.cache)
-
-    await service.start()
+    await this.core.start()
     // await service.stop()
 
     await sleep(2000)
@@ -172,20 +172,18 @@ describe('Core', function (this: {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp2)
     }
 
-    // await service.start()
+    // await this.core.start()
 
     await sleep(2000)
     const secondCount = await this.repository.count()
 
     expect(secondCount).toBe(4)
 
-    await service.stop()
+    await this.core.stop()
   })
 
   test('Should cache new scheduled transactions', async () => {
-    const service = new Core(this.provider, this.cache)
-
-    await service.start()
+    await this.core.start()
 
     const incData = getMethodSigIncData(this.web3)
     const timestamp = addMinutes(new Date(), 15)
@@ -198,7 +196,7 @@ describe('Core', function (this: {
 
     expect(count).toBe(2)
 
-    await service.stop()
+    await this.core.stop()
   })
 })
 

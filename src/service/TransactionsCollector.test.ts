@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import TransactionExecutor from '../provider/TransactionExecutor'
+import TransactionExecutor from '../model/TransactionExecutor'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
@@ -9,7 +9,7 @@ import { addMinutes } from 'date-fns'
 import { time } from '@openzeppelin/test-helpers'
 import HDWalletProvider from '@truffle/hdwallet-provider'
 import IMetatransaction, { EMetatransactionStatus } from '../IMetatransaction'
-import parseEvent from '../provider/parseEvent'
+import parseEvent from '../model/parseEvent'
 import {
   deleteDatabase,
   resetDatabase,
