@@ -18,7 +18,7 @@ class TransactionsCollector implements ITransactionsCollector {
 
   async collectAndExecute (): Promise<void> {
     const toTimestamp = new Date()
-    const collectedTx = await this.cache.getScheduledTransactionsTo(toTimestamp)
+    const collectedTx = await this.cache.getScheduledTransactionsUntil(toTimestamp)
 
     for (const transaction of collectedTx) {
       try {

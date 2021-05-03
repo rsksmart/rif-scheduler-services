@@ -1,7 +1,7 @@
 import { deleteDatabase, resetDatabase, createDbConnection } from './db'
-import { Connection } from 'typeorm'
+import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from './entities'
-import Cache from './Cache'
+import Cache, { ICache } from './Cache'
 import { addMinutes } from 'date-fns'
 import { EMetatransactionStatus } from '../IMetatransaction'
 
@@ -11,25 +11,26 @@ const DB_NAME = 'test_db_store'
 
 describe('Cache', function (this: {
   dbConnection: Connection;
+  repository: Repository<ScheduledTransaction>
+  cache: ICache
 }) {
+  beforeEach(async () => {
+    this.dbConnection = await createDbConnection(DB_NAME)
+    this.repository = this.dbConnection.getRepository(ScheduledTransaction)
+    this.cache = new Cache(this.repository)
+  })
+
   afterEach(async () => {
     if (this.dbConnection && this.dbConnection.isConnected) {
       await resetDatabase(this.dbConnection)
       await deleteDatabase(this.dbConnection, DB_NAME)
     }
   })
-  beforeEach(async () => {
-    this.dbConnection = await createDbConnection(DB_NAME)
-  })
 
   test('Should add a new scheduled transaction', async () => {
-    const repository = this.dbConnection.getRepository(ScheduledTransaction)
-
-    const store = new Cache(repository)
-
     const date = addMinutes(new Date(), -2)
 
-    const id = await store.save({
+    const id = await this.cache.save({
       index: 1,
       from: '123',
       plan: 0,
@@ -41,20 +42,16 @@ describe('Cache', function (this: {
       blockNumber: 1
     })
 
-    const count = await repository.count()
+    const count = await this.repository.count()
 
     expect(id).toBeGreaterThan(0)
     expect(count).toBe(1)
   })
 
   test('Should get latest blockNumber', async () => {
-    const repository = this.dbConnection.getRepository(ScheduledTransaction)
-
-    const store = new Cache(repository)
-
     const date = addMinutes(new Date(), -2)
 
-    await store.save({
+    await this.cache.save({
       index: 1,
       blockNumber: 20,
       from: '123',
@@ -65,7 +62,7 @@ describe('Cache', function (this: {
       timestamp: date,
       value: ''
     })
-    await store.save({
+    await this.cache.save({
       index: 2,
       blockNumber: 90,
       from: '123',
@@ -76,7 +73,7 @@ describe('Cache', function (this: {
       timestamp: date,
       value: ''
     })
-    await store.save({
+    await this.cache.save({
       index: 3,
       blockNumber: 40,
       from: '123',
@@ -88,19 +85,15 @@ describe('Cache', function (this: {
       value: ''
     })
 
-    const lastBlockNumber = await store.getLastSyncedBlock()
+    const lastBlockNumber = await this.cache.getLastSyncedBlockNumber()
 
-    const count = await repository.count()
+    const count = await this.repository.count()
 
     expect(count).toBe(3)
     expect(lastBlockNumber).toBe(90)
   })
 
   test('Should get all cached transactions pending to execute until the specified timestamp', async () => {
-    const repository = this.dbConnection.getRepository(ScheduledTransaction)
-
-    const store = new Cache(repository)
-
     const timestamp = addMinutes(new Date(), 30)
 
     const mockMetatransaction = {
@@ -115,32 +108,32 @@ describe('Cache', function (this: {
       blockNumber: 1
     }
 
-    await store.save({
+    await this.cache.save({
       ...mockMetatransaction,
       index: 1,
       timestamp: addMinutes(timestamp, -10)
     })
-    await store.save({
+    await this.cache.save({
       ...mockMetatransaction,
       index: 2,
       timestamp: addMinutes(timestamp, -20)
     })
-    await store.save({
+    await this.cache.save({
       ...mockMetatransaction,
       index: 3,
       timestamp: addMinutes(timestamp, -120)
     })
-    await store.save({
+    await this.cache.save({
       ...mockMetatransaction,
       index: 4,
       timestamp: addMinutes(timestamp, 1)
     })
 
-    const count = await repository.count()
+    const count = await this.repository.count()
 
     expect(count).toBe(4)
 
-    const result = await store.getScheduledTransactionsTo(timestamp)
+    const result = await this.cache.getScheduledTransactionsUntil(timestamp)
 
     expect(result.length).toBe(3)
 
@@ -150,10 +143,6 @@ describe('Cache', function (this: {
   })
 
   test('Should get cached transactions only with status scheduled', async () => {
-    const repository = this.dbConnection.getRepository(ScheduledTransaction)
-
-    const store = new Cache(repository)
-
     const timestamp = addMinutes(new Date(), 30)
 
     const mockMetatransaction = {
@@ -168,43 +157,39 @@ describe('Cache', function (this: {
       blockNumber: 1
     }
 
-    await store.save({
+    await this.cache.save({
       ...mockMetatransaction,
       index: 1,
       timestamp: addMinutes(timestamp, -10)
     })
-    await store.save({
+    await this.cache.save({
       ...mockMetatransaction,
       index: 2,
       timestamp: addMinutes(timestamp, -10)
     })
-    await store.changeStatus(2, EMetatransactionStatus.executed)
-    await store.save({
+    await this.cache.changeStatus(2, EMetatransactionStatus.executed)
+    await this.cache.save({
       ...mockMetatransaction,
       index: 3,
       timestamp: addMinutes(timestamp, -10)
     })
-    await store.changeStatus(3, EMetatransactionStatus.failed)
+    await this.cache.changeStatus(3, EMetatransactionStatus.failed)
 
-    const count = await repository.count()
+    const count = await this.repository.count()
 
     expect(count).toBe(3)
 
-    const result = await store.getScheduledTransactionsTo(timestamp)
+    const result = await this.cache.getScheduledTransactionsUntil(timestamp)
 
     expect(result.length).toBe(1)
     expect(result[0].index).toBe(1)
   })
 
   test('Should be able to change a tx status', async () => {
-    const repository = this.dbConnection.getRepository(ScheduledTransaction)
-
-    const store = new Cache(repository)
-
     const date = addMinutes(new Date(), -2)
     const index = 1
 
-    await store.save({
+    await this.cache.save({
       index,
       from: '123',
       plan: 0,
@@ -216,16 +201,16 @@ describe('Cache', function (this: {
       blockNumber: 1
     })
 
-    const count = await repository.count()
-    const initialStatus = (await repository.findOne({
+    const count = await this.repository.count()
+    const initialStatus = (await this.repository.findOne({
       where: {
         index
       }
     }))?.status
 
-    await store.changeStatus(index, EMetatransactionStatus.executed)
+    await this.cache.changeStatus(index, EMetatransactionStatus.executed)
 
-    const newStatus = (await repository.findOne({
+    const newStatus = (await this.repository.findOne({
       where: {
         index
       }
@@ -237,14 +222,10 @@ describe('Cache', function (this: {
   })
 
   test('Should be able to save a reason for the status change', async () => {
-    const repository = this.dbConnection.getRepository(ScheduledTransaction)
-
-    const store = new Cache(repository)
-
     const date = addMinutes(new Date(), -2)
     const index = 1
 
-    await store.save({
+    await this.cache.save({
       index,
       from: '123',
       plan: 0,
@@ -256,16 +237,16 @@ describe('Cache', function (this: {
       blockNumber: 1
     })
 
-    const count = await repository.count()
-    const initialStatus = (await repository.findOne({
+    const count = await this.repository.count()
+    const initialStatus = (await this.repository.findOne({
       where: {
         index
       }
     }))?.status
 
-    await store.changeStatus(index, EMetatransactionStatus.failed, 'Failed because it`s a test')
+    await this.cache.changeStatus(index, EMetatransactionStatus.failed, 'Failed because it`s a test')
 
-    const result = (await repository.findOne({
+    const result = (await this.repository.findOne({
       where: {
         index
       }

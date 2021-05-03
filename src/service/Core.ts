@@ -15,7 +15,7 @@ class Core { // FIXME: name proposal: TransactionsScheduleOrchestrator
     loggerFactory().debug('Starting...')
 
     loggerFactory().debug('Sync missed/older events')
-    const lastBlockNumber = await this.cache.getLastSyncedBlock()
+    const lastBlockNumber = await this.cache.getLastSyncedBlockNumber()
 
     const pastEvents = await this.provider.getPastScheduledTransactions(
       lastBlockNumber

@@ -4,8 +4,8 @@ import { ScheduledTransaction } from './entities'
 
 export interface ICache {
   save(transaction: IMetatransaction): Promise<number>;
-  getLastSyncedBlock(): Promise<number | undefined>;
-  getScheduledTransactionsTo (timestamp: Date): Promise<IMetatransaction[]>;
+  getLastSyncedBlockNumber(): Promise<number | undefined>;
+  getScheduledTransactionsUntil (timestamp: Date): Promise<IMetatransaction[]>;
   changeStatus (index: number, status: EMetatransactionStatus, reason?: string): Promise<void>;
 }
 
@@ -41,7 +41,7 @@ class Cache implements ICache {
     return scheduledTransaction.id
   }
 
-  async getLastSyncedBlock (): Promise<number | undefined> {
+  async getLastSyncedBlockNumber (): Promise<number | undefined> {
     const result = await this.repository
       .createQueryBuilder()
       .orderBy('blockNumber', 'DESC')
@@ -50,7 +50,7 @@ class Cache implements ICache {
     return result?.blockNumber
   }
 
-  async getScheduledTransactionsTo (timestamp: Date): Promise<IMetatransaction[]> {
+  async getScheduledTransactionsUntil (timestamp: Date): Promise<IMetatransaction[]> {
     const isoTimestamp = timestamp.toISOString()
 
     const transactionsToTimestamp = await this.repository.find({
