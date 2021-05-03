@@ -11,7 +11,8 @@
     "test:ci": "npx jest src/*/* --coverage --ci --runInBand",
     "test:watch": "npx jest src/*/* --verbose --coverage --watch --runInBand",
     "build": "rimraf ./lib && tsc",
-    "lint": "npx eslint ./src --ext .json,.js,.ts"
+    "lint": "npx eslint ./src --ext .json,.js,.ts",
+    "lint:fix": "npx eslint ./src --ext .json,.js,.ts --fix"
   },
   "repository": {
     "type": "git",

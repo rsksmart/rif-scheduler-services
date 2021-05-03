@@ -2,7 +2,7 @@ import Cache from '../cache/Cache'
 import loggerFactory from '../loggerFactory'
 import { Recoverer } from '../model/Recoverer'
 import { Listener, newScheduledTransactionsError, webSocketProviderError } from '../model/Listener'
-import { Tracer } from 'tracer';
+import { Tracer } from 'tracer'
 
 class Core {
   private cache: Cache;
