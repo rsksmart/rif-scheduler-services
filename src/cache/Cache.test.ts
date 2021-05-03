@@ -1,7 +1,7 @@
 import { deleteDatabase, resetDatabase, createDbConnection } from './db'
 import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from './entities'
-import Cache, { ICache } from './Cache'
+import Cache from './Cache'
 import { addMinutes } from 'date-fns'
 import { EMetatransactionStatus } from '../IMetatransaction'
 
@@ -12,7 +12,7 @@ const DB_NAME = 'test_db_store'
 describe('Cache', function (this: {
   dbConnection: Connection;
   repository: Repository<ScheduledTransaction>
-  cache: ICache
+  cache: Cache
 }) {
   beforeEach(async () => {
     this.dbConnection = await createDbConnection(DB_NAME)

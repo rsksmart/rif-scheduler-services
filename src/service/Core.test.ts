@@ -5,7 +5,7 @@ import {
 } from '../cache/db'
 import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../cache/entities'
-import Cache, { ICache } from '../cache/Cache'
+import Cache from '../cache/Cache'
 import { addMinutes } from 'date-fns'
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
@@ -13,14 +13,15 @@ import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
-import { OneShotSchedule, TransactionRecoverer } from '../model'
+import { SchedulingsListener, SchedulingsRecoverer } from '../model'
 import Core from './Core'
 
 const { toBN } = Web3.utils
 
 jest.setTimeout(27000)
 
-const BLOCKCHAIN_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
+const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
+const BLOCKCHAIN_WS_URL = 'ws://127.0.0.1:8545' // "wss://public-node.testnet.rsk.co"
 
 const DB_NAME = 'test_db_service'
 
@@ -49,8 +50,7 @@ const deployContract = async (
 
 describe('Core', function (this: {
   dbConnection: Connection;
-  cache: ICache;
-  provider: IProvider;
+  cache: Cache;
   repository: Repository<ScheduledTransaction>;
   oneShotScheduleContract: any;
   token: any;
@@ -72,7 +72,7 @@ describe('Core', function (this: {
 
     this.repository = this.dbConnection.getRepository(ScheduledTransaction)
 
-    this.web3 = new Web3(BLOCKCHAIN_URL)
+    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
     const [from] = await this.web3.eth.getAccounts()
     this.txOptions = { from }
     this.web3.eth.defaultAccount = from
@@ -144,10 +144,10 @@ describe('Core', function (this: {
     }
 
     const cache = new Cache(this.repository)
-    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
-    const recoverer = new TransactionRecoverer(this.oneShotScheduleContract.options.address)
+    const listener = new SchedulingsListener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
+    const recoverer = new SchedulingsRecoverer(BLOCKCHAIN_HTTP_URL, this.oneShotScheduleContract.options.address)
 
-    this.core = new Core(provider, recoverer, cache)
+    this.core = new Core(recoverer, listener, cache)
   })
 
   test('Should sync transactions after a restart', async () => {

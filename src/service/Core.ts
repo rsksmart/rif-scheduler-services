@@ -1,15 +1,15 @@
-import { ICache } from '../cache/Cache'
+import Cache from '../cache/Cache'
 import loggerFactory from '../loggerFactory'
 import { SchedulingsRecoverer, SchedulingsListener } from '../model'
 
-class Core { // FIXME: name proposal: TransactionsScheduleOrchestrator
-  private cache: ICache;
+class Core {
+  private cache: Cache;
   private recoverer: SchedulingsRecoverer
   private listener: SchedulingsListener
 
-  constructor (recoverer: SchedulingsRecoverer, listener: SchedulingsListener, cache: ICache) {
+  constructor (recoverer: SchedulingsRecoverer, listener: SchedulingsListener, cache: Cache) {
     this.cache = cache
-    this.recoverer =  recoverer
+    this.recoverer = recoverer
     this.listener = listener
   }
 

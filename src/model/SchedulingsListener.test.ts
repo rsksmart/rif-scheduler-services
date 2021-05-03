@@ -1,7 +1,6 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import { SchedulingsRecoverer } from './SchedulingsRecoverer'
 import { SchedulingsListener } from './SchedulingsListener'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
@@ -39,7 +38,7 @@ const deployContract = async (
 
 const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
-describe('OneShotSchedule', function (this: {
+describe('SchedulingsListener', function (this: {
   oneShotScheduleContract: any;
   token: any;
   counter: any;
@@ -116,27 +115,6 @@ describe('OneShotSchedule', function (this: {
       await this.oneShotScheduleContract.methods
         .schedule(plan, to, data, gas, timestampContract)
         .send({ ...this.txOptions, value, gas: scheduleGas })
-    }
-  })
-
-  test('Should get all past scheduled tx events', async () => {
-    const NUMBER_OF_SCHEDULED_TX = 2
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 15)
-
-    for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
-      await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-    }
-
-    const transactionRecoverer = new SchedulingsRecoverer(BLOCKCHAIN_HTTP_URL, this.oneShotScheduleContract.options.address)
-
-    const result = await transactionRecoverer.getPastScheduledTransactions()
-
-    expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
-
-    for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
-      expect(result[i].index).toBe(i)
-      expect(result[i].blockNumber).toBeGreaterThan(0)
     }
   })
 
