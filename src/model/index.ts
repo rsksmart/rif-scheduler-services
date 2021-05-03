@@ -1,2 +1,2 @@
-export { SchedulingsRecoverer } from './Recoverer'
+export { Recoverer } from './Recoverer'
 export { SchedulingsListener } from './Listener'

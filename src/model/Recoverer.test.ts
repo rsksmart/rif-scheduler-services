@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import { SchedulingsRecoverer } from './Recoverer'
+import { Recoverer } from './Recoverer'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
@@ -125,12 +125,12 @@ describe('SchedulingsRecoverer', function (this: {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp)
     }
 
-    const transactionRecoverer = new SchedulingsRecoverer(
+    const transactionRecoverer = new Recoverer(
       BLOCKCHAIN_HTTP_URL,
       this.oneShotScheduleContract.options.address
     )
 
-    const result = await transactionRecoverer.getPastScheduledTransactions()
+    const result = await transactionRecoverer.recoverScheduledTransactions()
 
     expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
 

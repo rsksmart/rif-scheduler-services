@@ -4,26 +4,29 @@ import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import IMetatransaction from '../IMetatransaction'
 import parseEvent from './parseEvent'
 
-export class SchedulingsRecoverer {
-  private web3: Web3;
-  private oneShotScheduleContract: any;
+/**
+ * This module recovers all the events that happened since a certain block.
+ * It is used to retrieve all events since the last time the service was stopped.
+ */
+export class Recoverer {
+  private contract: any;
 
-  constructor (rpcUrl: string, transactionScheduleAddress: string) {
-    this.web3 = new Web3(rpcUrl)
+  constructor (rpcUrl: string, contractAddress: string) {
+    const web3 = new Web3(rpcUrl)
 
-    this.oneShotScheduleContract = new this.web3.eth.Contract(
+    this.contract = new web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
-      transactionScheduleAddress
+      contractAddress
     )
   }
 
-  async getPastScheduledTransactions (
-    startFromBlock: number = 0
+  async recoverScheduledTransactions (
+    fromBlock: number = 0
   ): Promise<IMetatransaction[]> {
-    const pastEvents = await this.oneShotScheduleContract.getPastEvents(
+    const pastEvents = await this.contract.getPastEvents(
       'MetatransactionAdded',
       {
-        fromBlock: startFromBlock,
+        fromBlock,
         toBlock: 'latest'
       }
     )

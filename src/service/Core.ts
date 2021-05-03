@@ -1,13 +1,13 @@
 import Cache from '../cache/Cache'
 import loggerFactory from '../loggerFactory'
-import { SchedulingsRecoverer, SchedulingsListener } from '../model'
+import { Recoverer, SchedulingsListener } from '../model'
 
 class Core {
   private cache: Cache;
-  private recoverer: SchedulingsRecoverer
+  private recoverer: Recoverer
   private listener: SchedulingsListener
 
-  constructor (recoverer: SchedulingsRecoverer, listener: SchedulingsListener, cache: Cache) {
+  constructor (recoverer: Recoverer, listener: SchedulingsListener, cache: Cache) {
     this.cache = cache
     this.recoverer = recoverer
     this.listener = listener
@@ -19,7 +19,7 @@ class Core {
     loggerFactory().debug('Sync missed/older events')
     const lastBlockNumber = await this.cache.getLastSyncedBlockNumber()
 
-    const pastEvents = await this.recoverer.getPastScheduledTransactions(
+    const pastEvents = await this.recoverer.recoverScheduledTransactions(
       lastBlockNumber
     )
 
