@@ -1,7 +1,7 @@
 import Cache from '../cache/Cache'
 import { EMetatransactionStatus } from '../IMetatransaction'
 import loggerFactory from '../loggerFactory'
-import TransactionExecutor from '../model/TransactionExecutor'
+import TransactionExecutor from '../model/Executor'
 
 class TransactionsCollector {
   private cache: Cache;
