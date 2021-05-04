@@ -4,11 +4,7 @@ import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import IMetatransaction from '../IMetatransaction'
 import HDWalletProvider from '@truffle/hdwallet-provider'
 
-export interface ITransactionExecutor {
-  execute(transaction: IMetatransaction): Promise<void>;
-}
-
-class TransactionExecutor implements ITransactionExecutor {
+class TransactionExecutor {
   private web3: Web3;
   private hdWalletProvider: HDWalletProvider;
   private oneShotScheduleContract: any;

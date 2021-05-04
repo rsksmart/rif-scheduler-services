@@ -1,31 +1,22 @@
-import {
-  deleteDatabase,
-  resetDatabase,
-  createDbConnection
-} from '../cache/db'
-import { Connection, Repository } from 'typeorm'
-import { ScheduledTransaction } from '../cache/entities'
-import Cache from '../cache/Cache'
-import { addMinutes } from 'date-fns'
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
+import TransactionExecutor from './Executor'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
-import { Recoverer, Listener } from '../model'
-import Core from './Core'
+import { addMinutes } from 'date-fns'
+import { time } from '@openzeppelin/test-helpers'
+import HDWalletProvider from '@truffle/hdwallet-provider'
+import IMetatransaction from '../IMetatransaction'
+import parseEvent from './parseEvent'
 
 const { toBN } = Web3.utils
 
-jest.setTimeout(27000)
+jest.setTimeout(17000)
 
 const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
-const BLOCKCHAIN_WS_URL = 'ws://127.0.0.1:8545' // "wss://public-node.testnet.rsk.co"
-
-const DB_NAME = 'test_db_service'
-
-const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
+const MNEMONIC_PHRASE = 'foil faculty bag wealth dish hover pride refuse lottery appear west chat'
 
 const deployContract = async (
   web3: Web3,
@@ -48,34 +39,24 @@ const deployContract = async (
   )
 }
 
-describe('Core', function (this: {
-  dbConnection: Connection;
-  cache: Cache;
-  repository: Repository<ScheduledTransaction>;
+const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
+
+describe('TransactionExecutor', function (this: {
   oneShotScheduleContract: any;
   token: any;
   counter: any;
   txOptions: { from: string };
   plans: any[],
   web3: Web3;
-  scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
-  core: Core
+  scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<IMetatransaction>;
 }) {
-  afterEach(async () => {
-    if (this.dbConnection && this.dbConnection.isConnected) {
-      await resetDatabase(this.dbConnection)
-      await deleteDatabase(this.dbConnection, DB_NAME)
-    }
-  })
   beforeEach(async () => {
-    this.dbConnection = await createDbConnection(DB_NAME)
-
-    this.repository = this.dbConnection.getRepository(ScheduledTransaction)
-
     this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
     const [from] = await this.web3.eth.getAccounts()
+
     this.txOptions = { from }
     this.web3.eth.defaultAccount = from
+
     this.plans = [
       { price: toBN(15), window: toBN(10000) },
       { price: toBN(4), window: toBN(300) }
@@ -138,68 +119,90 @@ describe('Core', function (this: {
       const scheduleGas = await this.oneShotScheduleContract.methods
         .schedule(plan, to, data, gas, timestampContract)
         .estimateGas()
-      await this.oneShotScheduleContract.methods
+      const receipt = await this.oneShotScheduleContract.methods
         .schedule(plan, to, data, gas, timestampContract)
         .send({ ...this.txOptions, value, gas: scheduleGas })
+
+      return parseEvent(receipt.events.MetatransactionAdded)
     }
 
-    const cache = new Cache(this.repository)
-    const listener = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
-    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.oneShotScheduleContract.options.address)
-
-    this.core = new Core(recoverer, listener, cache)
+    // send balance to provider account - needs refactor
+    const providerWalletWeb3 = new HDWalletProvider({
+      mnemonic: MNEMONIC_PHRASE,
+      providerOrUrl: BLOCKCHAIN_HTTP_URL,
+      numberOfAddresses: 1,
+      shareNonce: true,
+      derivationPath: "m/44'/137'/0'/0/"
+    })
+    const serviceProviderWeb3 = new Web3(providerWalletWeb3)
+    const [serviceProviderAccount] = await serviceProviderWeb3.eth.getAccounts()
+    await this.web3.eth.sendTransaction({ to: serviceProviderAccount, value: '1000000000000000000' })
+    providerWalletWeb3.engine.stop()
   })
 
-  test('Should sync transactions after a restart', async () => {
-    // TODO: if we stop the service then fails to reconnect
+  test('Should execute a scheduled tx', async () => {
+    const CONFIRMATIONS_REQUIRED = 10
+
     const incData = getMethodSigIncData(this.web3)
-    const timestamp1 = addMinutes(new Date(), 15)
+    const timestamp = addMinutes(new Date(), 5)
 
-    for (let i = 0; i < 2; i++) {
-      await this.scheduleTransaction(0, incData, toBN(0), timestamp1)
-    }
+    const transaction = await this.scheduleTransaction(0, incData, toBN(0), timestamp)
 
-    await this.core.start()
-    // await service.stop()
+    const txExecutor = new TransactionExecutor(
+      this.oneShotScheduleContract.options.address,
+      CONFIRMATIONS_REQUIRED,
+      MNEMONIC_PHRASE,
+      BLOCKCHAIN_HTTP_URL
+    )
 
-    await sleep(2000)
-    const firstCount = await this.repository.count()
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
-    expect(firstCount).toBe(2)
-
-    const timestamp2 = addMinutes(new Date(), 15)
-    for (let i = 0; i < 2; i++) {
-      await this.scheduleTransaction(0, incData, toBN(0), timestamp2)
-    }
-
-    // await this.core.start()
-
-    await sleep(2000)
-    const secondCount = await this.repository.count()
-
-    expect(secondCount).toBe(4)
-
-    await this.core.stop()
+    await txExecutor.execute(transaction)
   })
 
-  test('Should cache new scheduled transactions', async () => {
-    await this.core.start()
+  test('Should throw error when execute a scheduled tx without the confirmations required', async () => {
+    const CONFIRMATIONS_REQUIRED = 10
 
     const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 15)
+    const timestamp = addMinutes(new Date(), 5)
 
-    for (let i = 0; i < 2; i++) {
-      await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-    }
+    const transaction = await this.scheduleTransaction(0, incData, toBN(0), timestamp)
 
-    const count = await this.repository.count()
+    const txExecutor = new TransactionExecutor(
+      this.oneShotScheduleContract.options.address,
+      CONFIRMATIONS_REQUIRED,
+      MNEMONIC_PHRASE,
+      BLOCKCHAIN_HTTP_URL
+    )
 
-    expect(count).toBe(2)
+    await expect(txExecutor.execute(transaction))
+      .rejects
+      .toThrow('Minimum confirmations required')
+  })
 
-    await this.core.stop()
+  test('Should throw error when execute a scheduled tx twice', async () => {
+    const CONFIRMATIONS_REQUIRED = 1
+
+    const incData = getMethodSigIncData(this.web3)
+    const timestamp = addMinutes(new Date(), 5)
+
+    const transaction = await this.scheduleTransaction(0, incData, toBN(0), timestamp)
+
+    const txExecutor = new TransactionExecutor(
+      this.oneShotScheduleContract.options.address,
+      CONFIRMATIONS_REQUIRED,
+      MNEMONIC_PHRASE,
+      BLOCKCHAIN_HTTP_URL
+    )
+
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
+
+    await txExecutor.execute(transaction)
+
+    await expect(txExecutor.execute(transaction))
+      .rejects
+      .toThrow('Already executed')
   })
 })
-
-function sleep (ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}

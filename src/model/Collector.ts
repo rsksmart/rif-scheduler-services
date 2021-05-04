@@ -1,17 +1,13 @@
-import { ICache } from '../cache/Cache'
+import Cache from '../cache/Cache'
 import { EMetatransactionStatus } from '../IMetatransaction'
 import loggerFactory from '../loggerFactory'
-import { ITransactionExecutor } from '../provider/TransactionExecutor'
+import TransactionExecutor from '../model/Executor'
 
-export interface ITransactionsCollector {
-    collectAndExecute(): Promise<void>
-}
+class TransactionsCollector {
+  private cache: Cache;
+  private executor: TransactionExecutor
 
-class TransactionsCollector implements ITransactionsCollector {
-  private cache: ICache;
-  private executor: ITransactionExecutor
-
-  constructor (cache: ICache, executor: ITransactionExecutor) {
+  constructor (cache: Cache, executor: TransactionExecutor) {
     this.cache = cache
     this.executor = executor
   }

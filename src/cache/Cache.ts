@@ -2,14 +2,7 @@ import { LessThanOrEqual, Repository } from 'typeorm'
 import IMetatransaction, { EMetatransactionStatus } from '../IMetatransaction'
 import { ScheduledTransaction } from './entities'
 
-export interface ICache {
-  save(transaction: IMetatransaction): Promise<number>;
-  getLastSyncedBlockNumber(): Promise<number | undefined>;
-  getScheduledTransactionsUntil (timestamp: Date): Promise<IMetatransaction[]>;
-  changeStatus (index: number, status: EMetatransactionStatus, reason?: string): Promise<void>;
-}
-
-class Cache implements ICache {
+class Cache {
   private repository: Repository<ScheduledTransaction>;
 
   constructor (repository: Repository<ScheduledTransaction>) {

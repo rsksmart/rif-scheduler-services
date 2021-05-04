@@ -1,18 +1,18 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import OneShotSchedule from './OneShotSchedule'
+import { Listener, newScheduledTransactionsError } from './Listener'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
 import { addMinutes } from 'date-fns'
-import loggerFactory from '../loggerFactory'
 
 const { toBN } = Web3.utils
 
 jest.setTimeout(17000)
 
 const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
+const BLOCKCHAIN_WS_URL = 'ws://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 
 const deployContract = async (
   web3: Web3,
@@ -37,7 +37,7 @@ const deployContract = async (
 
 const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
-describe('OneShotSchedule', function (this: {
+describe('SchedulingsListener', function (this: {
   oneShotScheduleContract: any;
   token: any;
   counter: any;
@@ -64,10 +64,6 @@ describe('OneShotSchedule', function (this: {
       ERC677Data.bytecode,
       [from, toBN('1000000000000000000000'), 'RIFOS', 'RIF']
     )
-
-    // console.log('balance',
-    //   await this.token.methods.balanceOf(from).call()
-    // )
 
     this.counter = await deployContract(
       this.web3,
@@ -121,35 +117,8 @@ describe('OneShotSchedule', function (this: {
     }
   })
 
-  test('Should get all past scheduled tx events', async () => {
-    const NUMBER_OF_SCHEDULED_TX = 2
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 15)
-
-    for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
-      await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-    }
-
-    // console.log(
-    //   await this.oneShotScheduleContract.methods.getSchedule(0).call()
-    // );
-
-    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
-
-    const result = await provider.getPastScheduledTransactions()
-
-    expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
-
-    for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
-      expect(result[i].index).toBe(i)
-      expect(result[i].blockNumber).toBeGreaterThan(0)
-    }
-
-    await provider.disconnect()
-  })
-
   test('Should execute callback after schedule a new transaction', async (done) => {
-    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
+    const provider = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
 
     provider.listenNewScheduledTransactions(async (event) => {
       expect(event).toBeDefined()
@@ -165,22 +134,23 @@ describe('OneShotSchedule', function (this: {
   })
 
   test('Should not execute new scheduled tx callback when disconnected', async () => {
-    const logger = loggerFactory()
-    const logErrorSpied = jest.spyOn(logger, 'error')
+    expect.assertions(2)
 
     const callback = jest.fn()
 
-    const provider = new OneShotSchedule(this.oneShotScheduleContract.options.address)
+    const listener = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
 
-    await provider.disconnect()
+    listener.on(newScheduledTransactionsError, (error) => {
+      expect(error.message).toEqual('connection not open on send()')
+      expect(callback).not.toBeCalled()
+    })
 
-    provider.listenNewScheduledTransactions(callback)
+    listener.listenNewScheduledTransactions(callback)
+
+    await listener.disconnect()
 
     const timestamp = addMinutes(new Date(), 15)
 
     await this.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
-
-    expect(logErrorSpied).toHaveBeenCalledWith('The websocket connection is not opened', expect.anything())
-    expect(callback).not.toBeCalled()
   })
 })

@@ -1,23 +1,30 @@
-import { ICache } from '../cache/Cache'
+import Cache from '../cache/Cache'
 import loggerFactory from '../loggerFactory'
-import { IProvider } from '../provider/OneShotSchedule'
+import { Recoverer } from '../model/Recoverer'
+import { Listener, newScheduledTransactionsError, webSocketProviderError } from '../model/Listener'
+import { Tracer } from 'tracer'
 
-class Core { // FIXME: name proposal: TransactionsScheduleOrchestrator
-  private provider: IProvider;
-  private cache: ICache;
+class Core {
+  private cache: Cache;
+  private recoverer: Recoverer
+  private listener: Listener
+  private logger: Tracer.Logger
 
-  constructor (provider: IProvider, cache: ICache) {
-    this.provider = provider
+  constructor (recoverer: Recoverer, listener: Listener, cache: Cache) {
     this.cache = cache
+    this.recoverer = recoverer
+    this.listener = listener
+
+    this.logger = loggerFactory()
   }
 
   async start () {
-    loggerFactory().debug('Starting...')
+    this.logger.debug('Starting...')
 
-    loggerFactory().debug('Sync missed/older events')
+    this.logger.debug('Sync missed/older events')
     const lastBlockNumber = await this.cache.getLastSyncedBlockNumber()
 
-    const pastEvents = await this.provider.getPastScheduledTransactions(
+    const pastEvents = await this.recoverer.recoverScheduledTransactions(
       lastBlockNumber
     )
 
@@ -25,20 +32,21 @@ class Core { // FIXME: name proposal: TransactionsScheduleOrchestrator
       await this.cache.save(event)
     }
 
-    loggerFactory().debug('Start listening new events')
+    this.logger.debug('Start listening new events')
 
-    await this.provider.listenNewScheduledTransactions(async (event) => {
+    await this.listener.listenNewScheduledTransactions(async (event) => {
       await this.cache.save(event)
     })
 
-    // TODO: Phase 3: trigger scheduled transactions every n minutes
+    this.listener.on(newScheduledTransactionsError, this.logger.error)
+    this.listener.on(webSocketProviderError, this.logger.error)
   }
 
   async stop () {
-    await this.provider.disconnect()
+    await this.listener.disconnect()
     // TODO: stop schedule trigger
 
-    loggerFactory().debug('Stopped')
+    this.logger.debug('Stopped')
   }
 }
 
