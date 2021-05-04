@@ -1,31 +1,36 @@
 import Cache from '../cache/Cache'
 import { EMetatransactionStatus } from '../IMetatransaction'
-import loggerFactory from '../loggerFactory'
-import TransactionExecutor from '../model/Executor'
+import { Executor } from './Executor'
+import { EventEmitter } from 'events'
 
-class TransactionsCollector {
+export const transactionExecutionFailed = 'transactionExecutionFailed'
+export class Collector extends EventEmitter {
   private cache: Cache;
-  private executor: TransactionExecutor
+  private executor: Executor
 
-  constructor (cache: Cache, executor: TransactionExecutor) {
+  constructor (cache: Cache, executor: Executor) {
+    super()
+
     this.cache = cache
     this.executor = executor
   }
 
   async collectAndExecute (): Promise<void> {
-    const toTimestamp = new Date()
-    const collectedTx = await this.cache.getScheduledTransactionsUntil(toTimestamp)
+    const timestamp = new Date()
+    const collectedTx = await this.cache.getScheduledTransactionsUntil(timestamp)
 
     for (const transaction of collectedTx) {
       try {
         await this.executor.execute(transaction)
         await this.cache.changeStatus(transaction.index, EMetatransactionStatus.executed)
       } catch (error) {
-        loggerFactory().error(error)
+        this.emit(transactionExecutionFailed, error)
         await this.cache.changeStatus(transaction.index, EMetatransactionStatus.failed, error.message)
       }
     }
   }
-}
 
-export default TransactionsCollector
+  async disconnect () {
+    await this.executor.stopEngine()
+  }
+}

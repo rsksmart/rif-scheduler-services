@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import TransactionExecutor from './Executor'
+import { Executor } from './Executor'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
@@ -41,7 +41,7 @@ const deployContract = async (
 
 const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
-describe('TransactionExecutor', function (this: {
+describe('Executor', function (this: {
   oneShotScheduleContract: any;
   token: any;
   counter: any;
@@ -148,11 +148,11 @@ describe('TransactionExecutor', function (this: {
 
     const transaction = await this.scheduleTransaction(0, incData, toBN(0), timestamp)
 
-    const txExecutor = new TransactionExecutor(
+    const txExecutor = new Executor(
+      BLOCKCHAIN_HTTP_URL,
       this.oneShotScheduleContract.options.address,
       CONFIRMATIONS_REQUIRED,
-      MNEMONIC_PHRASE,
-      BLOCKCHAIN_HTTP_URL
+      MNEMONIC_PHRASE
     )
 
     const currentBlockNumber = await this.web3.eth.getBlockNumber()
@@ -169,11 +169,11 @@ describe('TransactionExecutor', function (this: {
 
     const transaction = await this.scheduleTransaction(0, incData, toBN(0), timestamp)
 
-    const txExecutor = new TransactionExecutor(
+    const txExecutor = new Executor(
+      BLOCKCHAIN_HTTP_URL,
       this.oneShotScheduleContract.options.address,
       CONFIRMATIONS_REQUIRED,
-      MNEMONIC_PHRASE,
-      BLOCKCHAIN_HTTP_URL
+      MNEMONIC_PHRASE
     )
 
     await expect(txExecutor.execute(transaction))
@@ -189,11 +189,11 @@ describe('TransactionExecutor', function (this: {
 
     const transaction = await this.scheduleTransaction(0, incData, toBN(0), timestamp)
 
-    const txExecutor = new TransactionExecutor(
+    const txExecutor = new Executor(
+      BLOCKCHAIN_HTTP_URL,
       this.oneShotScheduleContract.options.address,
       CONFIRMATIONS_REQUIRED,
-      MNEMONIC_PHRASE,
-      BLOCKCHAIN_HTTP_URL
+      MNEMONIC_PHRASE
     )
 
     const currentBlockNumber = await this.web3.eth.getBlockNumber()

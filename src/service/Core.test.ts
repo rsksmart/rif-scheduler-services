@@ -13,8 +13,10 @@ import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
-import { Recoverer, Listener } from '../model'
+import { Recoverer, Listener, Executor } from '../model'
 import Core from './Core'
+import { Collector } from '../model/Collector'
+import { ITimer } from './Timer'
 
 const { toBN } = Web3.utils
 
@@ -22,8 +24,10 @@ jest.setTimeout(27000)
 
 const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 const BLOCKCHAIN_WS_URL = 'ws://127.0.0.1:8545' // "wss://public-node.testnet.rsk.co"
+const CONFIRMATIONS_REQUIRED = 1
+const MNEMONIC_PHRASE = 'foil faculty bag wealth dish hover pride refuse lottery appear west chat'
 
-const DB_NAME = 'test_db_service'
+const DB_NAME = 'test_db_core'
 
 const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
@@ -48,6 +52,15 @@ const deployContract = async (
   )
 }
 
+class TimerMock implements ITimer {
+  async start (collector: Collector) {
+    await collector.collectAndExecute()
+  }
+
+  async stop () {
+  }
+}
+
 describe('Core', function (this: {
   dbConnection: Connection;
   cache: Cache;
@@ -59,13 +72,16 @@ describe('Core', function (this: {
   plans: any[],
   web3: Web3;
   scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
-  core: Core
+  core: Core,
+  collectAndExecuteSpied: any,
+  timerStartSpied: any
 }) {
   afterEach(async () => {
     if (this.dbConnection && this.dbConnection.isConnected) {
       await resetDatabase(this.dbConnection)
       await deleteDatabase(this.dbConnection, DB_NAME)
     }
+    jest.clearAllMocks()
   })
   beforeEach(async () => {
     this.dbConnection = await createDbConnection(DB_NAME)
@@ -146,12 +162,22 @@ describe('Core', function (this: {
     const cache = new Cache(this.repository)
     const listener = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
     const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.oneShotScheduleContract.options.address)
+    const executor = new Executor(
+      BLOCKCHAIN_HTTP_URL,
+      this.oneShotScheduleContract.options.address,
+      CONFIRMATIONS_REQUIRED,
+      MNEMONIC_PHRASE
+    )
+    const collector = new Collector(cache, executor)
+    const timer = new TimerMock()
 
-    this.core = new Core(recoverer, listener, cache)
+    this.core = new Core(recoverer, listener, cache, collector, timer)
+
+    this.collectAndExecuteSpied = jest.spyOn(collector, 'collectAndExecute')
+    this.timerStartSpied = jest.spyOn(timer, 'start')
   })
 
   test('Should sync transactions after a restart', async () => {
-    // TODO: if we stop the service then fails to reconnect
     const incData = getMethodSigIncData(this.web3)
     const timestamp1 = addMinutes(new Date(), 15)
 
@@ -160,6 +186,7 @@ describe('Core', function (this: {
     }
 
     await this.core.start()
+    // TODO: if we stop the service then fails to reconnect
     // await service.stop()
 
     await sleep(2000)
@@ -172,7 +199,7 @@ describe('Core', function (this: {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp2)
     }
 
-    // await this.core.start()
+    await this.core.start()
 
     await sleep(2000)
     const secondCount = await this.repository.count()
@@ -180,6 +207,8 @@ describe('Core', function (this: {
     expect(secondCount).toBe(4)
 
     await this.core.stop()
+    expect(this.timerStartSpied).toBeCalledTimes(2)
+    expect(this.collectAndExecuteSpied).toBeCalledTimes(2)
   })
 
   test('Should cache new scheduled transactions', async () => {
@@ -197,6 +226,9 @@ describe('Core', function (this: {
     expect(count).toBe(2)
 
     await this.core.stop()
+
+    expect(this.timerStartSpied).toBeCalledTimes(1)
+    expect(this.collectAndExecuteSpied).toBeCalledTimes(1)
   })
 })
 
