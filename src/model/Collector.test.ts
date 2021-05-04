@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import TransactionExecutor from '../model/Executor'
+import { Executor } from './Executor'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
@@ -18,7 +18,7 @@ import {
 import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../cache/entities'
 import Cache from '../cache/Cache'
-import TransactionCollector from './Collector'
+import { Collector } from './Collector'
 
 const { toBN } = Web3.utils
 
@@ -51,7 +51,7 @@ const deployContract = async (
 
 const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
-describe('TransactionsCollector', function (this: {
+describe('Collector', function (this: {
   dbConnection: Connection;
   cache: Cache;
   repository: Repository<ScheduledTransaction>;
@@ -176,11 +176,11 @@ describe('TransactionsCollector', function (this: {
 
     await this.cache.save({ ...transaction, timestamp: addMinutes(timestamp, -DIFF_MINUTES) })
 
-    const txExecutor = new TransactionExecutor(
+    const txExecutor = new Executor(
+      BLOCKCHAIN_HTTP_URL,
       this.oneShotScheduleContract.options.address,
       CONFIRMATIONS_REQUIRED,
-      MNEMONIC_PHRASE,
-      BLOCKCHAIN_HTTP_URL
+      MNEMONIC_PHRASE
     )
 
     const executorExecuteSpied = jest.spyOn(txExecutor, 'execute')
@@ -190,7 +190,7 @@ describe('TransactionsCollector', function (this: {
     Date.now = jest.fn(() => +timestamp)
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
-    const collector = new TransactionCollector(this.cache, txExecutor)
+    const collector = new Collector(this.cache, txExecutor)
 
     await collector.collectAndExecute()
 
