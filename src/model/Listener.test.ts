@@ -37,7 +37,7 @@ const deployContract = async (
 
 const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
-describe('SchedulingsListener', function (this: {
+describe('Listener', function (this: {
   oneShotScheduleContract: any;
   token: any;
   counter: any;

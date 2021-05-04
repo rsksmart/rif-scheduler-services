@@ -4,29 +4,29 @@ import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import IMetatransaction from '../IMetatransaction'
 import HDWalletProvider from '@truffle/hdwallet-provider'
 
-class TransactionExecutor {
+export class Executor {
   private web3: Web3;
   private hdWalletProvider: HDWalletProvider;
   private oneShotScheduleContract: any;
   private confirmationsRequired: number;
-  private transactionScheduleAddress: string;
+  private contractAddress: string;
   private mnemonicPhrase: string;
-  private blockchainUrl: string;
+  private rpcUrl: string;
 
   constructor (
-    transactionScheduleAddress: string,
+    rpcUrl: string,
+    contractAddress: string,
     confirmationsRequired: number,
-    mnemonicPhrase: string,
-    blockchainUrl: string
+    mnemonicPhrase: string
   ) {
-    this.transactionScheduleAddress = transactionScheduleAddress
+    this.contractAddress = contractAddress
     this.confirmationsRequired = confirmationsRequired
     this.mnemonicPhrase = mnemonicPhrase
-    this.blockchainUrl = blockchainUrl
+    this.rpcUrl = rpcUrl
 
     this.hdWalletProvider = new HDWalletProvider({
       mnemonic: this.mnemonicPhrase,
-      providerOrUrl: this.blockchainUrl,
+      providerOrUrl: this.rpcUrl,
       numberOfAddresses: 1,
       shareNonce: true,
       derivationPath: "m/44'/137'/0'/0/"
@@ -36,7 +36,7 @@ class TransactionExecutor {
 
     this.oneShotScheduleContract = new this.web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
-      this.transactionScheduleAddress
+      this.contractAddress
     )
   }
 
@@ -74,7 +74,7 @@ class TransactionExecutor {
 
       const transactionSchedule = new this.web3.eth.Contract(
           OneShotScheduleData.abi as AbiItem[],
-          this.transactionScheduleAddress
+          this.contractAddress
       )
 
       const [providerAccountAddress] = await this.web3.eth.getAccounts()
@@ -90,6 +90,8 @@ class TransactionExecutor {
       this.hdWalletProvider.engine.stop()
     }
   }
-}
 
-export default TransactionExecutor
+  async stopEngine () {
+    this.hdWalletProvider.engine.stop()
+  }
+}

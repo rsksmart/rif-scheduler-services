@@ -36,7 +36,7 @@ const deployContract = async (
 
 const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
-describe('SchedulingsRecoverer', function (this: {
+describe('Recoverer', function (this: {
   oneShotScheduleContract: any;
   token: any;
   counter: any;
@@ -125,12 +125,12 @@ describe('SchedulingsRecoverer', function (this: {
       await this.scheduleTransaction(0, incData, toBN(0), timestamp)
     }
 
-    const transactionRecoverer = new Recoverer(
+    const recoverer = new Recoverer(
       BLOCKCHAIN_HTTP_URL,
       this.oneShotScheduleContract.options.address
     )
 
-    const result = await transactionRecoverer.recoverScheduledTransactions()
+    const result = await recoverer.recoverScheduledTransactions()
 
     expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
 
