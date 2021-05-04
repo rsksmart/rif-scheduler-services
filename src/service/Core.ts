@@ -4,23 +4,23 @@ import { Recoverer } from '../model/Recoverer'
 import { Listener, newScheduledTransactionsError, webSocketProviderError } from '../model/Listener'
 import { Collector, transactionExecutionFailed } from '../model/Collector'
 import { Tracer } from 'tracer'
-import { ITimer } from './Timer'
+import { IScheduler } from '../model/Scheduler'
 
 class Core {
   private cache: Cache;
   private recoverer: Recoverer
   private listener: Listener
   private collector: Collector
-  private timer: ITimer
+  private scheduler: IScheduler
   private logger: Tracer.Logger
 
-  constructor (recoverer: Recoverer, listener: Listener, cache: Cache, collector: Collector, timer: ITimer) {
+  constructor (recoverer: Recoverer, listener: Listener, cache: Cache, collector: Collector, scheduler: IScheduler) {
     this.cache = cache
     this.recoverer = recoverer
     this.listener = listener
 
     this.collector = collector
-    this.timer = timer
+    this.scheduler = scheduler
 
     this.logger = loggerFactory()
   }
@@ -39,24 +39,24 @@ class Core {
       await this.cache.save(event)
     }
 
-    this.logger.debug('Start listening new events')
-
     this.listener.on(newScheduledTransactionsError, this.logger.error)
     this.listener.on(webSocketProviderError, this.logger.error)
 
+    this.logger.debug('Start listening new events')
     await this.listener.listenNewScheduledTransactions(async (event) => {
       await this.cache.save(event)
     })
 
     this.collector.on(transactionExecutionFailed, this.logger.error)
 
-    await this.timer.start(this.collector)
+    this.logger.debug('Start scheduler')
+    await this.scheduler.start(this.collector)
   }
 
   async stop () {
     await this.listener.disconnect()
     await this.collector.disconnect()
-    await this.timer.stop()
+    await this.scheduler.stop()
 
     this.logger.debug('Stopped')
   }
