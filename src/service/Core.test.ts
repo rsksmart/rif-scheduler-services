@@ -16,7 +16,7 @@ import CounterData from '../contract/Counter.json'
 import { Recoverer, Listener, Executor } from '../model'
 import Core from './Core'
 import { Collector } from '../model/Collector'
-import { ITimer } from './Timer'
+import { IScheduler } from '../model/Scheduler'
 
 const { toBN } = Web3.utils
 
@@ -52,7 +52,7 @@ const deployContract = async (
   )
 }
 
-class TimerMock implements ITimer {
+class SchedulerMock implements IScheduler {
   async start (collector: Collector) {
     await collector.collectAndExecute()
   }
@@ -74,7 +74,7 @@ describe('Core', function (this: {
   scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
   core: Core,
   collectAndExecuteSpied: any,
-  timerStartSpied: any
+  schedulerStartSpied: any
 }) {
   afterEach(async () => {
     if (this.dbConnection && this.dbConnection.isConnected) {
@@ -169,12 +169,12 @@ describe('Core', function (this: {
       MNEMONIC_PHRASE
     )
     const collector = new Collector(cache, executor)
-    const timer = new TimerMock()
+    const scheduler = new SchedulerMock()
 
-    this.core = new Core(recoverer, listener, cache, collector, timer)
+    this.core = new Core(recoverer, listener, cache, collector, scheduler)
 
     this.collectAndExecuteSpied = jest.spyOn(collector, 'collectAndExecute')
-    this.timerStartSpied = jest.spyOn(timer, 'start')
+    this.schedulerStartSpied = jest.spyOn(scheduler, 'start')
   })
 
   test('Should sync transactions after a restart', async () => {
@@ -207,7 +207,7 @@ describe('Core', function (this: {
     expect(secondCount).toBe(4)
 
     await this.core.stop()
-    expect(this.timerStartSpied).toBeCalledTimes(2)
+    expect(this.schedulerStartSpied).toBeCalledTimes(2)
     expect(this.collectAndExecuteSpied).toBeCalledTimes(2)
   })
 
@@ -227,7 +227,7 @@ describe('Core', function (this: {
 
     await this.core.stop()
 
-    expect(this.timerStartSpied).toBeCalledTimes(1)
+    expect(this.schedulerStartSpied).toBeCalledTimes(1)
     expect(this.collectAndExecuteSpied).toBeCalledTimes(1)
   })
 })

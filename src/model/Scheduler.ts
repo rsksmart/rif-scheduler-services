@@ -1,14 +1,14 @@
 import cron from 'node-cron'
-import { Collector } from '../model/Collector'
+import { Collector } from './Collector'
 
 const EVERY_FIVE_MINUTES = '*/5 * * * *'
 
-export interface ITimer {
+export interface IScheduler {
   start (collector: Collector): Promise<void>
   stop (): Promise<void>
 }
 
-class Timer implements ITimer {
+export class Scheduler implements IScheduler {
   private cronExpression: string;
   private scheduledTask: cron.ScheduledTask | undefined;
 
@@ -28,5 +28,3 @@ class Timer implements ITimer {
     }
   }
 }
-
-export default Timer
