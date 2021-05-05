@@ -1,10 +1,10 @@
-import Cache from '../cache/Cache'
-import loggerFactory from '../loggerFactory'
-import { Recoverer } from '../model/Recoverer'
-import { Listener, newScheduledTransactionsError, webSocketProviderError } from '../model/Listener'
-import { Collector, transactionExecutionFailed } from '../model/Collector'
+import { Cache } from './Cache'
+import loggerFactory from './common/loggerFactory'
+import { Recoverer } from './Recoverer'
+import { Listener, newScheduledTransactionsError, webSocketProviderError } from './Listener'
+import { Collector, transactionExecutionFailed } from './Collector'
 import { Tracer } from 'tracer'
-import { IScheduler } from '../model/Scheduler'
+import { IScheduler } from './Scheduler'
 
 class Core {
   private cache: Cache;

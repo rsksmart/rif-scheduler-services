@@ -1,8 +1,8 @@
 import { LessThanOrEqual, Repository } from 'typeorm'
-import IMetatransaction, { EMetatransactionStatus } from '../IMetatransaction'
-import { ScheduledTransaction } from './entities'
+import IMetatransaction, { EMetatransactionStatus } from './common/IMetatransaction'
+import { ScheduledTransaction } from './common/entities'
 
-class Cache {
+export class Cache {
   private repository: Repository<ScheduledTransaction>;
 
   constructor (repository: Repository<ScheduledTransaction>) {
@@ -89,5 +89,3 @@ class Cache {
     }
   }
 }
-
-export default Cache

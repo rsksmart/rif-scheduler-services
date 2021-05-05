@@ -1,5 +1,5 @@
-import Cache from '../cache/Cache'
-import { EMetatransactionStatus } from '../IMetatransaction'
+import { Cache } from './Cache'
+import { EMetatransactionStatus } from './common/IMetatransaction'
 import { Executor } from './Executor'
 import { EventEmitter } from 'events'
 

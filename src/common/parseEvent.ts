@@ -1,4 +1,4 @@
-import IMetatransaction from '../IMetatransaction'
+import IMetatransaction from './IMetatransaction'
 
 const parseEvent = ({
   returnValues,

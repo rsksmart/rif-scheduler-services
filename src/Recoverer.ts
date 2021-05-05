@@ -1,8 +1,8 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
-import OneShotScheduleData from '../contract/OneShotSchedule.json'
-import IMetatransaction from '../IMetatransaction'
-import parseEvent from './parseEvent'
+import OneShotScheduleData from './contract/OneShotSchedule.json'
+import IMetatransaction from './common/IMetatransaction'
+import parseEvent from './common/parseEvent'
 
 /**
  * This module recovers all the events that happened since a certain block.
