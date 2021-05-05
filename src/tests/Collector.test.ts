@@ -1,31 +1,27 @@
-import {
-  deleteDatabase,
-  resetDatabase,
-  createDbConnection
-} from '../cache/db'
-import { Connection, Repository } from 'typeorm'
-import { ScheduledTransaction } from '../cache/entities'
-import Cache from '../cache/Cache'
-import { addMinutes } from 'date-fns'
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
-import { Recoverer, Listener } from '../model'
-import Core from './Core'
+import { addMinutes } from 'date-fns'
+import HDWalletProvider from '@truffle/hdwallet-provider'
+import IMetatransaction, { EMetatransactionStatus } from '../common/IMetatransaction'
+import parseEvent from '../common/parseEvent'
+import { createDbConnection } from '../common/createDbConnection'
+import { deleteDatabase, resetDatabase } from './utils'
+import { Connection, Repository } from 'typeorm'
+import { ScheduledTransaction } from '../common/entities'
+import { Cache } from '../Cache'
+import { Collector } from '../Collector'
 
 const { toBN } = Web3.utils
 
-jest.setTimeout(27000)
+jest.setTimeout(17000)
 
 const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
-const BLOCKCHAIN_WS_URL = 'ws://127.0.0.1:8545' // "wss://public-node.testnet.rsk.co"
-
-const DB_NAME = 'test_db_service'
-
-const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
+const MNEMONIC_PHRASE = 'foil faculty bag wealth dish hover pride refuse lottery appear west chat'
+const DB_NAME = 'test_db_collector'
 
 const deployContract = async (
   web3: Web3,
@@ -48,7 +44,7 @@ const deployContract = async (
   )
 }
 
-describe('Core', function (this: {
+describe('Collector', function (this: {
   dbConnection: Connection;
   cache: Cache;
   repository: Repository<ScheduledTransaction>;
@@ -58,8 +54,7 @@ describe('Core', function (this: {
   txOptions: { from: string };
   plans: any[],
   web3: Web3;
-  scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
-  core: Core
+  scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<IMetatransaction>;
 }) {
   afterEach(async () => {
     if (this.dbConnection && this.dbConnection.isConnected) {
@@ -72,10 +67,14 @@ describe('Core', function (this: {
 
     this.repository = this.dbConnection.getRepository(ScheduledTransaction)
 
+    this.cache = new Cache(this.repository)
+
     this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
     const [from] = await this.web3.eth.getAccounts()
+
     this.txOptions = { from }
     this.web3.eth.defaultAccount = from
+
     this.plans = [
       { price: toBN(15), window: toBN(10000) },
       { price: toBN(4), window: toBN(300) }
@@ -138,68 +137,118 @@ describe('Core', function (this: {
       const scheduleGas = await this.oneShotScheduleContract.methods
         .schedule(plan, to, data, gas, timestampContract)
         .estimateGas()
-      await this.oneShotScheduleContract.methods
+      const receipt = await this.oneShotScheduleContract.methods
         .schedule(plan, to, data, gas, timestampContract)
         .send({ ...this.txOptions, value, gas: scheduleGas })
+
+      return parseEvent(receipt.events.MetatransactionAdded)
     }
 
-    const cache = new Cache(this.repository)
-    const listener = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
-    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.oneShotScheduleContract.options.address)
-
-    this.core = new Core(recoverer, listener, cache)
+    // send balance to provider account - needs refactor
+    const providerWalletWeb3 = new HDWalletProvider({
+      mnemonic: MNEMONIC_PHRASE,
+      providerOrUrl: BLOCKCHAIN_HTTP_URL,
+      numberOfAddresses: 1,
+      shareNonce: true,
+      derivationPath: "m/44'/137'/0'/0/"
+    })
+    const serviceProviderWeb3 = new Web3(providerWalletWeb3)
+    const [serviceProviderAccount] = await serviceProviderWeb3.eth.getAccounts()
+    await this.web3.eth.sendTransaction({ to: serviceProviderAccount, value: '1000000000000000000' })
+    providerWalletWeb3.engine.stop()
   })
 
-  test('Should sync transactions after a restart', async () => {
-    // TODO: if we stop the service then fails to reconnect
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp1 = addMinutes(new Date(), 15)
+  test('Should collect all transactions with status scheduled until the specified timestamp', async () => {
+    const timestamp = addMinutes(new Date(), 30)
 
-    for (let i = 0; i < 2; i++) {
-      await this.scheduleTransaction(0, incData, toBN(0), timestamp1)
+    const mockMetatransaction = {
+      index: 0,
+      from: '123',
+      plan: 0,
+      to: '456',
+      data: '',
+      gas: 100,
+      timestamp: new Date(),
+      value: '',
+      blockNumber: 1
     }
 
-    await this.core.start()
-    // await service.stop()
-
-    await sleep(2000)
-    const firstCount = await this.repository.count()
-
-    expect(firstCount).toBe(2)
-
-    const timestamp2 = addMinutes(new Date(), 15)
-    for (let i = 0; i < 2; i++) {
-      await this.scheduleTransaction(0, incData, toBN(0), timestamp2)
-    }
-
-    // await this.core.start()
-
-    await sleep(2000)
-    const secondCount = await this.repository.count()
-
-    expect(secondCount).toBe(4)
-
-    await this.core.stop()
-  })
-
-  test('Should cache new scheduled transactions', async () => {
-    await this.core.start()
-
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), 15)
-
-    for (let i = 0; i < 2; i++) {
-      await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-    }
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 1,
+      timestamp: addMinutes(timestamp, -10)
+    })
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 2,
+      timestamp: addMinutes(timestamp, -20)
+    })
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 3,
+      timestamp: addMinutes(timestamp, -120)
+    })
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 4,
+      timestamp: addMinutes(timestamp, 1)
+    })
 
     const count = await this.repository.count()
 
-    expect(count).toBe(2)
+    expect(count).toBe(4)
 
-    await this.core.stop()
+    const collector = new Collector(this.repository)
+    const result = await collector.collectSince(timestamp)
+
+    expect(result.length).toBe(3)
+
+    result.forEach((item) => {
+      expect(item.timestamp <= timestamp).toBeTruthy()
+    })
+  })
+
+  test('Should collect transactions only with status scheduled', async () => {
+    const timestamp = addMinutes(new Date(), 30)
+
+    const mockMetatransaction = {
+      index: 0,
+      from: '123',
+      plan: 0,
+      to: '456',
+      data: '',
+      gas: 100,
+      timestamp: new Date(),
+      value: '',
+      blockNumber: 1
+    }
+
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 1,
+      timestamp: addMinutes(timestamp, -10)
+    })
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 2,
+      timestamp: addMinutes(timestamp, -10)
+    })
+    await this.cache.changeStatus(2, EMetatransactionStatus.executed)
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 3,
+      timestamp: addMinutes(timestamp, -10)
+    })
+    await this.cache.changeStatus(3, EMetatransactionStatus.failed)
+
+    const count = await this.repository.count()
+
+    expect(count).toBe(3)
+
+    const collector = new Collector(this.repository)
+    const result = await collector.collectSince(timestamp)
+
+    expect(result.length).toBe(1)
+    expect(result[0].index).toBe(1)
   })
 })
-
-function sleep (ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}

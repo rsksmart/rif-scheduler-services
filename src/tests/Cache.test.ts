@@ -1,9 +1,10 @@
-import { deleteDatabase, resetDatabase, createDbConnection } from './db'
+import { createDbConnection } from '../common/createDbConnection'
+import { deleteDatabase, resetDatabase } from './utils'
 import { Connection, Repository } from 'typeorm'
-import { ScheduledTransaction } from './entities'
-import Cache from './Cache'
+import { ScheduledTransaction } from '../common/entities'
+import { Cache } from '../Cache'
 import { addMinutes } from 'date-fns'
-import { EMetatransactionStatus } from '../IMetatransaction'
+import { EMetatransactionStatus } from '../common/IMetatransaction'
 
 jest.setTimeout(7000)
 
@@ -91,98 +92,6 @@ describe('Cache', function (this: {
 
     expect(count).toBe(3)
     expect(lastBlockNumber).toBe(90)
-  })
-
-  test('Should get all cached transactions pending to execute until the specified timestamp', async () => {
-    const timestamp = addMinutes(new Date(), 30)
-
-    const mockMetatransaction = {
-      index: 0,
-      from: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
-      timestamp: new Date(),
-      value: '',
-      blockNumber: 1
-    }
-
-    await this.cache.save({
-      ...mockMetatransaction,
-      index: 1,
-      timestamp: addMinutes(timestamp, -10)
-    })
-    await this.cache.save({
-      ...mockMetatransaction,
-      index: 2,
-      timestamp: addMinutes(timestamp, -20)
-    })
-    await this.cache.save({
-      ...mockMetatransaction,
-      index: 3,
-      timestamp: addMinutes(timestamp, -120)
-    })
-    await this.cache.save({
-      ...mockMetatransaction,
-      index: 4,
-      timestamp: addMinutes(timestamp, 1)
-    })
-
-    const count = await this.repository.count()
-
-    expect(count).toBe(4)
-
-    const result = await this.cache.getScheduledTransactionsUntil(timestamp)
-
-    expect(result.length).toBe(3)
-
-    result.forEach((item) => {
-      expect(item.timestamp <= timestamp).toBeTruthy()
-    })
-  })
-
-  test('Should get cached transactions only with status scheduled', async () => {
-    const timestamp = addMinutes(new Date(), 30)
-
-    const mockMetatransaction = {
-      index: 0,
-      from: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
-      timestamp: new Date(),
-      value: '',
-      blockNumber: 1
-    }
-
-    await this.cache.save({
-      ...mockMetatransaction,
-      index: 1,
-      timestamp: addMinutes(timestamp, -10)
-    })
-    await this.cache.save({
-      ...mockMetatransaction,
-      index: 2,
-      timestamp: addMinutes(timestamp, -10)
-    })
-    await this.cache.changeStatus(2, EMetatransactionStatus.executed)
-    await this.cache.save({
-      ...mockMetatransaction,
-      index: 3,
-      timestamp: addMinutes(timestamp, -10)
-    })
-    await this.cache.changeStatus(3, EMetatransactionStatus.failed)
-
-    const count = await this.repository.count()
-
-    expect(count).toBe(3)
-
-    const result = await this.cache.getScheduledTransactionsUntil(timestamp)
-
-    expect(result.length).toBe(1)
-    expect(result[0].index).toBe(1)
   })
 
   test('Should be able to change a tx status', async () => {

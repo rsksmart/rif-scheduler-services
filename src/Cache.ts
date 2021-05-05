@@ -1,8 +1,8 @@
-import { LessThanOrEqual, Repository } from 'typeorm'
-import IMetatransaction, { EMetatransactionStatus } from '../IMetatransaction'
-import { ScheduledTransaction } from './entities'
+import { Repository } from 'typeorm'
+import IMetatransaction, { EMetatransactionStatus } from './common/IMetatransaction'
+import { ScheduledTransaction } from './common/entities'
 
-class Cache {
+export class Cache {
   private repository: Repository<ScheduledTransaction>;
 
   constructor (repository: Repository<ScheduledTransaction>) {
@@ -43,33 +43,6 @@ class Cache {
     return result?.blockNumber
   }
 
-  async getScheduledTransactionsUntil (timestamp: Date): Promise<IMetatransaction[]> {
-    const isoTimestamp = timestamp.toISOString()
-
-    const transactionsToTimestamp = await this.repository.find({
-      where: {
-        timestamp: LessThanOrEqual(isoTimestamp),
-        status: EMetatransactionStatus.scheduled
-      }
-    })
-
-    const result = transactionsToTimestamp.map((x): IMetatransaction => {
-      return {
-        index: x.index,
-        from: x.from,
-        plan: x.plan,
-        to: x.to,
-        data: x.data,
-        gas: x.gas,
-        value: x.value,
-        blockNumber: x.blockNumber,
-        timestamp: new Date(x.timestamp)
-      }
-    })
-
-    return result
-  }
-
   async changeStatus (
     index: number,
     status: EMetatransactionStatus,
@@ -89,5 +62,3 @@ class Cache {
     }
   }
 }
-
-export default Cache

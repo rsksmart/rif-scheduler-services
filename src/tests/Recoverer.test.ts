@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import { Listener, newScheduledTransactionsError } from './Listener'
+import { Recoverer } from '../Recoverer'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
@@ -12,7 +12,6 @@ const { toBN } = Web3.utils
 jest.setTimeout(17000)
 
 const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
-const BLOCKCHAIN_WS_URL = 'ws://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 
 const deployContract = async (
   web3: Web3,
@@ -37,7 +36,7 @@ const deployContract = async (
 
 const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
-describe('SchedulingsListener', function (this: {
+describe('Recoverer', function (this: {
   oneShotScheduleContract: any;
   token: any;
   counter: any;
@@ -117,40 +116,27 @@ describe('SchedulingsListener', function (this: {
     }
   })
 
-  test('Should execute callback after schedule a new transaction', async (done) => {
-    const provider = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
-
-    provider.listenNewScheduledTransactions(async (event) => {
-      expect(event).toBeDefined()
-      expect(event.index).toBe(0)
-      expect(event.blockNumber).toBeGreaterThan(0)
-      await provider.disconnect()
-      done()
-    })
-
+  test('Should get all past scheduled tx events', async () => {
+    const NUMBER_OF_SCHEDULED_TX = 2
+    const incData = getMethodSigIncData(this.web3)
     const timestamp = addMinutes(new Date(), 15)
 
-    await this.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
-  })
+    for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
+      await this.scheduleTransaction(0, incData, toBN(0), timestamp)
+    }
 
-  test('Should not execute new scheduled tx callback when disconnected', async () => {
-    expect.assertions(2)
+    const recoverer = new Recoverer(
+      BLOCKCHAIN_HTTP_URL,
+      this.oneShotScheduleContract.options.address
+    )
 
-    const callback = jest.fn()
+    const result = await recoverer.recoverScheduledTransactions()
 
-    const listener = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
+    expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
 
-    listener.on(newScheduledTransactionsError, (error) => {
-      expect(error.message).toEqual('connection not open on send()')
-      expect(callback).not.toBeCalled()
-    })
-
-    listener.listenNewScheduledTransactions(callback)
-
-    await listener.disconnect()
-
-    const timestamp = addMinutes(new Date(), 15)
-
-    await this.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
+    for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
+      expect(result[i].index).toBe(i)
+      expect(result[i].blockNumber).toBeGreaterThan(0)
+    }
   })
 })

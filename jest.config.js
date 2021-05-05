@@ -1,12 +1,12 @@
 module.exports = {
-  preset: "ts-jest",
-  testEnvironment: "node",
-  reporters: ["default", "jest-junit"],
-  testResultsProcessor: "jest-junit",
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  reporters: ['default', 'jest-junit'],
+  testResultsProcessor: 'jest-junit',
   globals: {
-    "ts-jest": {
-      tsconfig: "./tsconfig.json",
-    },
+    'ts-jest': {
+      tsconfig: './tsconfig.json'
+    }
   },
-  collectCoverageFrom: ["src/**/*.ts"],
-};
+  collectCoverageFrom: ['src/**/*.ts']
+}
