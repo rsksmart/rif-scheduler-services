@@ -1,10 +1,8 @@
 import cron from 'node-cron'
 
 const EVERY_FIVE_MINUTES = '*/5 * * * *'
-
-export type SchedulerTask = () => Promise<void>;
 export interface IScheduler {
-  start (task: SchedulerTask): Promise<void>
+  start (task: () => Promise<void>): Promise<void>
   stop (): Promise<void>
 }
 
@@ -18,13 +16,15 @@ export class Scheduler implements IScheduler {
     this.cronExpression = cronExpression
   }
 
-  async start (task: SchedulerTask): Promise<void> {
+  async start (task: () => Promise<void>): Promise<void> {
     this.scheduledTask = cron.schedule(this.cronExpression, task)
   }
 
   async stop () {
-    if (this.scheduledTask) {
-      this.scheduledTask.stop()
+    if (!this.scheduledTask) {
+      throw new Error('Task not started')
     }
+
+    this.scheduledTask.stop()
   }
 }
