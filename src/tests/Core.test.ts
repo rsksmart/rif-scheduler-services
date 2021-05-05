@@ -15,7 +15,7 @@ import { Listener } from '../Listener'
 import { IExecutor } from '../Executor'
 import Core from '../Core'
 import { Collector } from '../Collector'
-import { IScheduler, SchedulerTask } from '../Scheduler'
+import { IScheduler } from '../Scheduler'
 import parseEvent from '../common/parseEvent'
 import IMetatransaction, { EMetatransactionStatus } from '../common/IMetatransaction'
 import mockDate from 'jest-mock-now'
@@ -53,7 +53,7 @@ const deployContract = async (
 }
 
 class SchedulerMock implements IScheduler {
-  async start (task: SchedulerTask) {
+  async start (task: () => Promise<void>) {
     await task()
   }
 
