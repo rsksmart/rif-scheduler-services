@@ -1,12 +1,10 @@
 import Web3 from 'web3'
 import { Contract } from 'web3-eth-contract'
 import { AbiItem } from 'web3-utils'
-import { Executor } from '../Executor'
 import OneShotScheduleData from '../contract/OneShotSchedule.json'
 import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
 import { addMinutes } from 'date-fns'
-import { time } from '@openzeppelin/test-helpers'
 import HDWalletProvider from '@truffle/hdwallet-provider'
 import IMetatransaction, { EMetatransactionStatus } from '../common/IMetatransaction'
 import parseEvent from '../common/parseEvent'
@@ -45,8 +43,6 @@ const deployContract = async (
       .then((newContractInstance: Contract) => resolve(newContractInstance))
   )
 }
-
-const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)
 
 describe('Collector', function (this: {
   dbConnection: Connection;
@@ -162,43 +158,97 @@ describe('Collector', function (this: {
     providerWalletWeb3.engine.stop()
   })
 
-  test('Should collect and execute cached tx`s', async () => {
-    const CONFIRMATIONS_REQUIRED = 1
-    const DIFF_MINUTES = 15
+  test('Should collect all transactions with status scheduled until the specified timestamp', async () => {
+    const timestamp = addMinutes(new Date(), 30)
 
-    const incData = getMethodSigIncData(this.web3)
-    const timestamp = addMinutes(new Date(), DIFF_MINUTES)
+    const mockMetatransaction = {
+      index: 0,
+      from: '123',
+      plan: 0,
+      to: '456',
+      data: '',
+      gas: 100,
+      timestamp: new Date(),
+      value: '',
+      blockNumber: 1
+    }
 
-    const transaction = await this.scheduleTransaction(0, incData, toBN(0), timestamp)
-
-    await this.cache.save({ ...transaction, timestamp: addMinutes(timestamp, -DIFF_MINUTES) })
-
-    const txExecutor = new Executor(
-      BLOCKCHAIN_HTTP_URL,
-      this.oneShotScheduleContract.options.address,
-      CONFIRMATIONS_REQUIRED,
-      MNEMONIC_PHRASE
-    )
-
-    const executorExecuteSpied = jest.spyOn(txExecutor, 'execute')
-
-    const currentBlockNumber = await this.web3.eth.getBlockNumber()
-
-    Date.now = jest.fn(() => +timestamp)
-    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
-
-    const collector = new Collector(this.cache, txExecutor)
-
-    await collector.collectAndExecute()
-
-    const cachedTx = await this.repository.findOne({
-      where: {
-        index: transaction.index
-      }
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 1,
+      timestamp: addMinutes(timestamp, -10)
+    })
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 2,
+      timestamp: addMinutes(timestamp, -20)
+    })
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 3,
+      timestamp: addMinutes(timestamp, -120)
+    })
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 4,
+      timestamp: addMinutes(timestamp, 1)
     })
 
-    expect(cachedTx).toBeDefined()
-    expect(cachedTx?.status).toBe(EMetatransactionStatus.executed)
-    expect(executorExecuteSpied).toBeCalledTimes(1)
+    const count = await this.repository.count()
+
+    expect(count).toBe(4)
+
+    const collector = new Collector(this.repository)
+    const result = await collector.collectSince(timestamp)
+
+    expect(result.length).toBe(3)
+
+    result.forEach((item) => {
+      expect(item.timestamp <= timestamp).toBeTruthy()
+    })
+  })
+
+  test('Should collect transactions only with status scheduled', async () => {
+    const timestamp = addMinutes(new Date(), 30)
+
+    const mockMetatransaction = {
+      index: 0,
+      from: '123',
+      plan: 0,
+      to: '456',
+      data: '',
+      gas: 100,
+      timestamp: new Date(),
+      value: '',
+      blockNumber: 1
+    }
+
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 1,
+      timestamp: addMinutes(timestamp, -10)
+    })
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 2,
+      timestamp: addMinutes(timestamp, -10)
+    })
+    await this.cache.changeStatus(2, EMetatransactionStatus.executed)
+    await this.cache.save({
+      ...mockMetatransaction,
+      index: 3,
+      timestamp: addMinutes(timestamp, -10)
+    })
+    await this.cache.changeStatus(3, EMetatransactionStatus.failed)
+
+    const count = await this.repository.count()
+
+    expect(count).toBe(3)
+
+    const collector = new Collector(this.repository)
+    const result = await collector.collectSince(timestamp)
+
+    expect(result.length).toBe(1)
+    expect(result[0].index).toBe(1)
   })
 })

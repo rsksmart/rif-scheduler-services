@@ -4,7 +4,12 @@ import OneShotScheduleData from './contract/OneShotSchedule.json'
 import IMetatransaction from './common/IMetatransaction'
 import HDWalletProvider from '@truffle/hdwallet-provider'
 
-export class Executor {
+export interface IExecutor {
+  execute (transaction: IMetatransaction): Promise<void>
+  stopEngine (): Promise<void>
+}
+
+export class Executor implements IExecutor {
   private web3: Web3;
   private hdWalletProvider: HDWalletProvider;
   private oneShotScheduleContract: any;
@@ -44,8 +49,6 @@ export class Executor {
     const currentBlockNumber = await this.web3.eth.getBlockNumber()
 
     const confirmations = currentBlockNumber - blockNumber
-
-    // console.log('confirmations', currentBlockNumber, blockNumber, this.confirmationsRequired)
 
     if (confirmations < this.confirmationsRequired) {
       throw new Error('Minimum confirmations required')

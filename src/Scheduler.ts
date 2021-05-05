@@ -1,10 +1,10 @@
 import cron from 'node-cron'
-import { Collector } from './Collector'
 
 const EVERY_FIVE_MINUTES = '*/5 * * * *'
 
+export type SchedulerTask = () => Promise<void>;
 export interface IScheduler {
-  start (collector: Collector): Promise<void>
+  start (task: SchedulerTask): Promise<void>
   stop (): Promise<void>
 }
 
@@ -18,8 +18,8 @@ export class Scheduler implements IScheduler {
     this.cronExpression = cronExpression
   }
 
-  async start (collector: Collector) {
-    this.scheduledTask = cron.schedule(this.cronExpression, () => collector.collectAndExecute())
+  async start (task: SchedulerTask): Promise<void> {
+    this.scheduledTask = cron.schedule(this.cronExpression, task)
   }
 
   async stop () {

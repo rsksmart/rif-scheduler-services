@@ -1,36 +1,40 @@
-import { Cache } from './Cache'
-import { EMetatransactionStatus } from './common/IMetatransaction'
-import { Executor } from './Executor'
-import { EventEmitter } from 'events'
+
+import { LessThanOrEqual, Repository } from 'typeorm'
+import { ScheduledTransaction } from './common/entities'
+import IMetatransaction, { EMetatransactionStatus } from './common/IMetatransaction'
 
 export const transactionExecutionFailed = 'transactionExecutionFailed'
-export class Collector extends EventEmitter {
-  private cache: Cache;
-  private executor: Executor
+export class Collector {
+  private repository: Repository<ScheduledTransaction>;
 
-  constructor (cache: Cache, executor: Executor) {
-    super()
-
-    this.cache = cache
-    this.executor = executor
+  constructor (repository: Repository<ScheduledTransaction>) {
+    this.repository = repository
   }
 
-  async collectAndExecute (): Promise<void> {
-    const timestamp = new Date()
-    const collectedTx = await this.cache.getScheduledTransactionsUntil(timestamp)
+  async collectSince (timestamp: Date): Promise<IMetatransaction[]> {
+    const isoTimestamp = timestamp.toISOString()
 
-    for (const transaction of collectedTx) {
-      try {
-        await this.executor.execute(transaction)
-        await this.cache.changeStatus(transaction.index, EMetatransactionStatus.executed)
-      } catch (error) {
-        this.emit(transactionExecutionFailed, error)
-        await this.cache.changeStatus(transaction.index, EMetatransactionStatus.failed, error.message)
+    const transactionsToTimestamp = await this.repository.find({
+      where: {
+        timestamp: LessThanOrEqual(isoTimestamp),
+        status: EMetatransactionStatus.scheduled
       }
-    }
-  }
+    })
 
-  async disconnect () {
-    await this.executor.stopEngine()
+    const result = transactionsToTimestamp.map((x): IMetatransaction => {
+      return {
+        index: x.index,
+        from: x.from,
+        plan: x.plan,
+        to: x.to,
+        data: x.data,
+        gas: x.gas,
+        value: x.value,
+        blockNumber: x.blockNumber,
+        timestamp: new Date(x.timestamp)
+      }
+    })
+
+    return result
   }
 }

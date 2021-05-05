@@ -12,10 +12,13 @@ import ERC677Data from '../contract/ERC677.json'
 import CounterData from '../contract/Counter.json'
 import { Recoverer } from '../Recoverer'
 import { Listener } from '../Listener'
-import { Executor } from '../Executor'
+import { IExecutor } from '../Executor'
 import Core from '../Core'
 import { Collector } from '../Collector'
-import { IScheduler } from '../Scheduler'
+import { IScheduler, SchedulerTask } from '../Scheduler'
+import parseEvent from '../common/parseEvent'
+import IMetatransaction, { EMetatransactionStatus } from '../common/IMetatransaction'
+import mockDate from 'jest-mock-now'
 
 const { toBN } = Web3.utils
 
@@ -23,8 +26,6 @@ jest.setTimeout(27000)
 
 const BLOCKCHAIN_HTTP_URL = 'http://127.0.0.1:8545' // "https://public-node.testnet.rsk.co"
 const BLOCKCHAIN_WS_URL = 'ws://127.0.0.1:8545' // "wss://public-node.testnet.rsk.co"
-const CONFIRMATIONS_REQUIRED = 1
-const MNEMONIC_PHRASE = 'foil faculty bag wealth dish hover pride refuse lottery appear west chat'
 
 const DB_NAME = 'test_db_core'
 
@@ -52,11 +53,21 @@ const deployContract = async (
 }
 
 class SchedulerMock implements IScheduler {
-  async start (collector: Collector) {
-    await collector.collectAndExecute()
+  async start (task: SchedulerTask) {
+    await task()
   }
 
   async stop () {
+  }
+}
+
+class ExecutorMock implements IExecutor {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async execute (transaction: IMetatransaction) {
+    // do nothing
+  }
+
+  async stopEngine () {
   }
 }
 
@@ -70,9 +81,10 @@ describe('Core', function (this: {
   txOptions: { from: string };
   plans: any[],
   web3: Web3;
-  scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<void>;
+  scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<IMetatransaction>;
   core: Core,
-  collectAndExecuteSpied: any,
+  executorExecuteSpied: any,
+  collectorCollectSinceSpied: any,
   schedulerStartSpied: any
 }) {
   afterEach(async () => {
@@ -153,26 +165,24 @@ describe('Core', function (this: {
       const scheduleGas = await this.oneShotScheduleContract.methods
         .schedule(plan, to, data, gas, timestampContract)
         .estimateGas()
-      await this.oneShotScheduleContract.methods
+      const receipt = await this.oneShotScheduleContract.methods
         .schedule(plan, to, data, gas, timestampContract)
         .send({ ...this.txOptions, value, gas: scheduleGas })
+
+      return parseEvent(receipt.events.MetatransactionAdded)
     }
 
-    const cache = new Cache(this.repository)
+    this.cache = new Cache(this.repository)
     const listener = new Listener(BLOCKCHAIN_WS_URL, this.oneShotScheduleContract.options.address)
     const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.oneShotScheduleContract.options.address)
-    const executor = new Executor(
-      BLOCKCHAIN_HTTP_URL,
-      this.oneShotScheduleContract.options.address,
-      CONFIRMATIONS_REQUIRED,
-      MNEMONIC_PHRASE
-    )
-    const collector = new Collector(cache, executor)
+    const executor = new ExecutorMock()
+    const collector = new Collector(this.repository)
     const scheduler = new SchedulerMock()
 
-    this.core = new Core(recoverer, listener, cache, collector, scheduler)
+    this.core = new Core(recoverer, listener, this.cache, collector, executor, scheduler)
 
-    this.collectAndExecuteSpied = jest.spyOn(collector, 'collectAndExecute')
+    this.executorExecuteSpied = jest.spyOn(executor, 'execute')
+    this.collectorCollectSinceSpied = jest.spyOn(collector, 'collectSince')
     this.schedulerStartSpied = jest.spyOn(scheduler, 'start')
   })
 
@@ -207,7 +217,8 @@ describe('Core', function (this: {
 
     await this.core.stop()
     expect(this.schedulerStartSpied).toBeCalledTimes(2)
-    expect(this.collectAndExecuteSpied).toBeCalledTimes(2)
+    expect(this.collectorCollectSinceSpied).toBeCalledTimes(2)
+    expect(this.executorExecuteSpied).toBeCalledTimes(0)
   })
 
   test('Should cache new scheduled transactions', async () => {
@@ -227,7 +238,37 @@ describe('Core', function (this: {
     await this.core.stop()
 
     expect(this.schedulerStartSpied).toBeCalledTimes(1)
-    expect(this.collectAndExecuteSpied).toBeCalledTimes(1)
+    expect(this.collectorCollectSinceSpied).toBeCalledTimes(1)
+    expect(this.executorExecuteSpied).toBeCalledTimes(0)
+  })
+
+  test('Should collect and execute cached tx`s', async () => {
+    const DIFF_IN_MINUTES = 15
+
+    const incData = getMethodSigIncData(this.web3)
+    const timestampFuture = addMinutes(new Date(), DIFF_IN_MINUTES)
+    mockDate(timestampFuture)
+
+    const transaction = await this.scheduleTransaction(0, incData, toBN(0), timestampFuture)
+
+    await this.core.start()
+
+    const cachedTx = await this.repository.findOne({
+      where: {
+        index: transaction.index
+      }
+    })
+
+    await this.core.stop()
+    expect(this.schedulerStartSpied).toBeCalledTimes(1)
+    expect(this.collectorCollectSinceSpied).toBeCalledTimes(1)
+    expect(this.executorExecuteSpied).toBeCalledTimes(1)
+    expect(this.executorExecuteSpied).toBeCalledWith(transaction)
+    expect(cachedTx).toBeDefined()
+    expect(cachedTx?.status).toBe(EMetatransactionStatus.executed)
+
+    const dateMocked = Date.now as any
+    dateMocked.mockRestore()
   })
 })
 
