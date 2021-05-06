@@ -21,7 +21,9 @@ describe('Listener', function (this: {
 
     provider.listenNewScheduledTransactions(async (event) => {
       expect(event).toBeDefined()
-      expect(event.index).toBe(0)
+      expect(event.id).toBeDefined()
+      expect(event.id).not.toBe('')
+      expect(event.timestamp).toBeDefined()
       expect(event.blockNumber).toBeGreaterThan(0)
       await provider.disconnect()
       done()

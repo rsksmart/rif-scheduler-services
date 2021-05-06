@@ -7,7 +7,7 @@ import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../common/entities'
 import { Cache } from '../Cache'
 import { Collector } from '../Collector'
-import { EMetatransactionStatus } from '../common/IMetatransaction'
+import IMetatransaction, { EMetatransactionStatus } from '../common/IMetatransaction'
 
 jest.setTimeout(17000)
 
@@ -40,9 +40,9 @@ describe('Collector', function (this: {
   test('Should collect all transactions with status scheduled until the specified timestamp', async () => {
     const timestamp = addMinutes(new Date(), 30)
 
-    const mockMetatransaction = {
-      index: 0,
-      from: '123',
+    const mockMetatransaction: IMetatransaction = {
+      id: 'none',
+      requestor: '123',
       plan: 0,
       to: '456',
       data: '',
@@ -54,22 +54,22 @@ describe('Collector', function (this: {
 
     await this.cache.save({
       ...mockMetatransaction,
-      index: 1,
+      id: 'hashedid1',
       timestamp: addMinutes(timestamp, -10)
     })
     await this.cache.save({
       ...mockMetatransaction,
-      index: 2,
+      id: 'hashedid2',
       timestamp: addMinutes(timestamp, -20)
     })
     await this.cache.save({
       ...mockMetatransaction,
-      index: 3,
+      id: 'hashedid3',
       timestamp: addMinutes(timestamp, -120)
     })
     await this.cache.save({
       ...mockMetatransaction,
-      index: 4,
+      id: 'hashedid4',
       timestamp: addMinutes(timestamp, 1)
     })
 
@@ -90,9 +90,9 @@ describe('Collector', function (this: {
   test('Should collect transactions only with status scheduled', async () => {
     const timestamp = addMinutes(new Date(), 30)
 
-    const mockMetatransaction = {
-      index: 0,
-      from: '123',
+    const mockMetatransaction: IMetatransaction = {
+      id: 'none',
+      requestor: '123',
       plan: 0,
       to: '456',
       data: '',
@@ -104,21 +104,21 @@ describe('Collector', function (this: {
 
     await this.cache.save({
       ...mockMetatransaction,
-      index: 1,
+      id: 'hashedid1',
       timestamp: addMinutes(timestamp, -10)
     })
     await this.cache.save({
       ...mockMetatransaction,
-      index: 2,
+      id: 'hashedid2',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus(2, EMetatransactionStatus.executed)
+    await this.cache.changeStatus('hashedid2', EMetatransactionStatus.executed)
     await this.cache.save({
       ...mockMetatransaction,
-      index: 3,
+      id: 'hashedid3',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus(3, EMetatransactionStatus.failed)
+    await this.cache.changeStatus('hashedid3', EMetatransactionStatus.failed)
 
     const count = await this.repository.count()
 
@@ -128,6 +128,6 @@ describe('Collector', function (this: {
     const result = await collector.collectSince(timestamp)
 
     expect(result.length).toBe(1)
-    expect(result[0].index).toBe(1)
+    expect(result[0].id).toBe('hashedid1')
   })
 })

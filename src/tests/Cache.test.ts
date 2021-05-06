@@ -31,9 +31,9 @@ describe('Cache', function (this: {
   test('Should add a new scheduled transaction', async () => {
     const date = addMinutes(new Date(), -2)
 
-    const id = await this.cache.save({
-      index: 1,
-      from: '123',
+    const key = await this.cache.save({
+      id: 'hashedid1',
+      requestor: '123',
       plan: 0,
       to: '456',
       data: '',
@@ -45,7 +45,7 @@ describe('Cache', function (this: {
 
     const count = await this.repository.count()
 
-    expect(id).toBeGreaterThan(0)
+    expect(key).toBeGreaterThan(0)
     expect(count).toBe(1)
   })
 
@@ -53,9 +53,9 @@ describe('Cache', function (this: {
     const date = addMinutes(new Date(), -2)
 
     await this.cache.save({
-      index: 1,
+      id: 'hashedid1',
       blockNumber: 20,
-      from: '123',
+      requestor: '123',
       plan: 0,
       to: '456',
       data: '',
@@ -64,9 +64,9 @@ describe('Cache', function (this: {
       value: ''
     })
     await this.cache.save({
-      index: 2,
+      id: 'hashedid2',
       blockNumber: 90,
-      from: '123',
+      requestor: '123',
       plan: 0,
       to: '456',
       data: '',
@@ -75,9 +75,9 @@ describe('Cache', function (this: {
       value: ''
     })
     await this.cache.save({
-      index: 3,
+      id: 'hashedid3',
       blockNumber: 40,
-      from: '123',
+      requestor: '123',
       plan: 0,
       to: '456',
       data: '',
@@ -96,11 +96,11 @@ describe('Cache', function (this: {
 
   test('Should be able to change a tx status', async () => {
     const date = addMinutes(new Date(), -2)
-    const index = 1
+    const id = 'hashedid'
 
     await this.cache.save({
-      index,
-      from: '123',
+      id,
+      requestor: '123',
       plan: 0,
       to: '456',
       data: '',
@@ -113,15 +113,15 @@ describe('Cache', function (this: {
     const count = await this.repository.count()
     const initialStatus = (await this.repository.findOne({
       where: {
-        index
+        id
       }
     }))?.status
 
-    await this.cache.changeStatus(index, EMetatransactionStatus.executed)
+    await this.cache.changeStatus(id, EMetatransactionStatus.executed)
 
     const newStatus = (await this.repository.findOne({
       where: {
-        index
+        id
       }
     }))?.status
 
@@ -132,11 +132,11 @@ describe('Cache', function (this: {
 
   test('Should be able to save a reason for the status change', async () => {
     const date = addMinutes(new Date(), -2)
-    const index = 1
+    const id = 'hashedid'
 
     await this.cache.save({
-      index,
-      from: '123',
+      id,
+      requestor: '123',
       plan: 0,
       to: '456',
       data: '',
@@ -149,15 +149,15 @@ describe('Cache', function (this: {
     const count = await this.repository.count()
     const initialStatus = (await this.repository.findOne({
       where: {
-        index
+        id
       }
     }))?.status
 
-    await this.cache.changeStatus(index, EMetatransactionStatus.failed, 'Failed because it`s a test')
+    await this.cache.changeStatus(id, EMetatransactionStatus.failed, 'Failed because it`s a test')
 
     const result = (await this.repository.findOne({
       where: {
-        index
+        id
       }
     }))
 

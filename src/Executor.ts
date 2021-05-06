@@ -9,6 +9,15 @@ export interface IExecutor {
   stopEngine (): Promise<void>
 }
 
+enum EContractMetatransactionState {
+  Scheduled = '0',
+  ExecutionSuccessful = '1',
+  ExecutionFailed = '2',
+  Overdue = '3',
+  Refunded = '4',
+  Cancelled = '5'
+}
+
 export class Executor implements IExecutor {
   private web3: Web3;
   private hdWalletProvider: HDWalletProvider;
@@ -55,25 +64,25 @@ export class Executor implements IExecutor {
     }
   }
 
-  private async ensureNotExecuted (transaction: IMetatransaction) {
+  private async ensureIsScheduled (transaction: IMetatransaction) {
     // TODO: once we have a getState method, change this call to use it
 
     const contractTransaction = await this.oneShotScheduleContract.methods
-      .getSchedule(transaction.index).call()
+      .getSchedule(transaction.id).call()
 
-    const isExecutedKey = '7'
+    const stateKey = '7'
 
-    if (contractTransaction[isExecutedKey]) {
-      throw new Error('Already executed')
+    if (contractTransaction[stateKey] !== EContractMetatransactionState.Scheduled) {
+      throw new Error('State must be Scheduled')
     }
   }
 
   async execute (transaction: IMetatransaction) {
     try {
-      const { index } = transaction
+      const { id: index } = transaction
 
       await this.ensureConfirmations(transaction)
-      await this.ensureNotExecuted(transaction)
+      await this.ensureIsScheduled(transaction)
 
       const transactionSchedule = new this.web3.eth.Contract(
           OneShotScheduleData.abi as AbiItem[],

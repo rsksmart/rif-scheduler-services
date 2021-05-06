@@ -23,8 +23,8 @@ export class Collector {
 
     const result = transactionsToTimestamp.map((x): IMetatransaction => {
       return {
-        index: x.index,
-        from: x.from,
+        id: x.id,
+        requestor: x.requestor,
         plan: x.plan,
         to: x.to,
         data: x.data,

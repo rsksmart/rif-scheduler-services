@@ -4,8 +4,8 @@ export enum EMetatransactionStatus {
   failed = 'failed',
 }
 interface IMetatransaction {
-  index: number;
-  from: string;
+  id: string;
+  requestor: string;
   plan: number;
   to: string;
   data: string;

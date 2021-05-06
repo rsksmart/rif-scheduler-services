@@ -9,21 +9,31 @@ import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { deployContract } from './utils'
 
 export interface ISetup {
-    oneShotScheduleContractAddress: string;
-    token: any;
-    counter: any;
-    txOptions: { from: string };
-    plans: any[],
-    web3: Web3;
-    scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<IMetatransaction>;
-  }
+  oneShotScheduleContractAddress: string;
+  token: any;
+  counter: any;
+  accounts: { requestor: string, serviceProvider: string, payee: string, contractAdmin: string};
+  plans: any[],
+  web3: Web3;
+  scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<IMetatransaction>;
+}
 
 export const setupContracts = async (): Promise<ISetup> => {
   const web3 = new Web3(BLOCKCHAIN_HTTP_URL)
-  const [from] = await web3.eth.getAccounts()
+  const [
+    requestorAccountAddress,
+    serviceProviderAccountAddress,
+    payeeAccountAddress,
+    contractAdminAccountAddress
+  ] = await web3.eth.getAccounts()
 
-  const txOptions = { from }
-  web3.eth.defaultAccount = from
+  const accounts = {
+    requestor: requestorAccountAddress,
+    serviceProvider: serviceProviderAccountAddress,
+    payee: payeeAccountAddress,
+    contractAdmin: contractAdminAccountAddress
+  }
+  web3.eth.defaultAccount = accounts.contractAdmin
 
   const plans = [
     { price: toBN(15), window: toBN(10000) },
@@ -34,12 +44,8 @@ export const setupContracts = async (): Promise<ISetup> => {
     web3,
       ERC677Data.abi as AbiItem[],
       ERC677Data.bytecode,
-      [from, toBN('1000000000000000000000'), 'RIFOS', 'RIF']
+      [accounts.contractAdmin, toBN('1000000000000000000000'), 'RIFOS', 'RIF']
   )
-
-  // console.log('balance',
-  //   await token.methods.balanceOf(from).call()
-  // )
 
   const counter = await deployContract(
     web3,
@@ -52,22 +58,24 @@ export const setupContracts = async (): Promise<ISetup> => {
     web3,
       OneShotScheduleData.abi as AbiItem[],
       OneShotScheduleData.bytecode,
-      [token.options.address, from]
+      [accounts.serviceProvider, accounts.payee]
   )
 
-  const addPlanGas = await oneShotScheduleContract.methods
-    .addPlan(plans[0].price, plans[0].window)
-    .estimateGas()
-  await oneShotScheduleContract.methods
-    .addPlan(plans[0].price, plans[0].window)
-    .send({ ...txOptions, gas: addPlanGas })
+  const tokenTransferGas = await token.methods
+    .transfer(accounts.requestor, 100000)
+    .estimateGas({ from: accounts.contractAdmin })
+  await token.methods
+    .transfer(accounts.requestor, 100000)
+    .send({ from: accounts.contractAdmin, gas: tokenTransferGas })
 
-  const scheduleTransaction = async (
-    plan: number,
-    data: any,
-    value: any,
-    timestamp: Date
-  ): Promise<IMetatransaction> => {
+  const addPlanGas = await oneShotScheduleContract.methods
+    .addPlan(plans[0].price, plans[0].window, token.options.address)
+    .estimateGas({ from: accounts.serviceProvider })
+  await oneShotScheduleContract.methods
+    .addPlan(plans[0].price, plans[0].window, token.options.address)
+    .send({ from: accounts.serviceProvider, gas: addPlanGas })
+
+  const scheduleTransaction = async (plan: number, data: any, value: any, timestamp: Date): Promise<IMetatransaction> => {
     const timestampContract = toBN(
       Math.floor(+timestamp / 1000)
     )
@@ -77,24 +85,24 @@ export const setupContracts = async (): Promise<ISetup> => {
 
     const approveGas = await token.methods
       .approve(oneShotScheduleContract.options.address, plans[plan].price)
-      .estimateGas()
+      .estimateGas({ from: accounts.requestor })
     await token.methods
       .approve(oneShotScheduleContract.options.address, plans[plan].price)
-      .send({ ...txOptions, gas: approveGas })
+      .send({ from: accounts.requestor, gas: approveGas })
 
     const purchaseGas = await oneShotScheduleContract.methods
       .purchase(plan, toBN(1))
-      .estimateGas()
+      .estimateGas({ from: accounts.requestor })
     await oneShotScheduleContract.methods
       .purchase(plan, toBN(1))
-      .send({ ...txOptions, gas: purchaseGas })
+      .send({ from: accounts.requestor, gas: purchaseGas })
 
     const scheduleGas = await oneShotScheduleContract.methods
       .schedule(plan, to, data, gas, timestampContract)
-      .estimateGas()
+      .estimateGas({ from: accounts.requestor })
     const receipt = await oneShotScheduleContract.methods
       .schedule(plan, to, data, gas, timestampContract)
-      .send({ ...txOptions, value, gas: scheduleGas })
+      .send({ from: accounts.requestor, value, gas: scheduleGas })
 
     return parseEvent(receipt.events.MetatransactionAdded)
   }
@@ -103,7 +111,7 @@ export const setupContracts = async (): Promise<ISetup> => {
     oneShotScheduleContractAddress: oneShotScheduleContract.options.address,
     token,
     counter,
-    txOptions,
+    accounts,
     plans,
     web3,
     scheduleTransaction

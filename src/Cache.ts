@@ -11,15 +11,15 @@ export class Cache {
 
   async save (transaction: IMetatransaction): Promise<number> {
     const cacheTransaction = await this.repository.findOne({
-      where: { index: transaction.index }
+      where: { id: transaction.id }
     })
 
-    if (cacheTransaction) return cacheTransaction.id
+    if (cacheTransaction) return cacheTransaction.key
 
     const scheduledTransaction = await this.repository.save(
       new ScheduledTransaction(
-        transaction.index,
-        transaction.from,
+        transaction.id,
+        transaction.requestor,
         transaction.plan,
         transaction.to,
         transaction.data,
@@ -31,7 +31,7 @@ export class Cache {
       )
     )
 
-    return scheduledTransaction.id
+    return scheduledTransaction.key
   }
 
   async getLastSyncedBlockNumber (): Promise<number | undefined> {
@@ -44,13 +44,13 @@ export class Cache {
   }
 
   async changeStatus (
-    index: number,
+    id: string,
     status: EMetatransactionStatus,
     reason?: string
   ): Promise<void> {
     const scheduledTransaction = await this.repository.findOne({
       where: {
-        index
+        id
       }
     })
 

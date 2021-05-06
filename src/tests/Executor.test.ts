@@ -83,6 +83,6 @@ describe('Executor', function (this: {
 
     await expect(txExecutor.execute(transaction))
       .rejects
-      .toThrow('Already executed')
+      .toThrow('State must be Scheduled')
   })
 })

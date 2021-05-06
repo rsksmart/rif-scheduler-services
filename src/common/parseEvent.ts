@@ -5,8 +5,8 @@ const parseEvent = ({
   blockNumber
 }): IMetatransaction => {
   return {
-    index: +returnValues.index,
-    from: returnValues.from,
+    id: returnValues.id,
+    requestor: returnValues.requestor,
     plan: +returnValues.plan,
     to: returnValues.to,
     data: returnValues.data,

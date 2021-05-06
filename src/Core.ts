@@ -65,10 +65,10 @@ class Core {
       for (const transaction of collectedTx) {
         try {
           await this.executor.execute(transaction)
-          await this.cache.changeStatus(transaction.index, EMetatransactionStatus.executed)
+          await this.cache.changeStatus(transaction.id, EMetatransactionStatus.executed)
         } catch (error) {
           this.logger.error(error)
-          await this.cache.changeStatus(transaction.index, EMetatransactionStatus.failed, error.message)
+          await this.cache.changeStatus(transaction.id, EMetatransactionStatus.failed, error.message)
         }
       }
     })

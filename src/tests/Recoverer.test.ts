@@ -35,7 +35,9 @@ describe('Recoverer', function (this: {
     expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
 
     for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
-      expect(result[i].index).toBe(i)
+      expect(result[i].id).toBeDefined()
+      expect(result[i].id).not.toBe('')
+      expect(result[i].timestamp).toBeDefined()
       expect(result[i].blockNumber).toBeGreaterThan(0)
     }
   })

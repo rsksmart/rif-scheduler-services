@@ -9,11 +9,10 @@ import { addMinutes } from 'date-fns'
 import Web3 from 'web3'
 import { Recoverer } from '../Recoverer'
 import { Listener } from '../Listener'
-import { IExecutor } from '../Executor'
 import Core from '../Core'
 import { Collector } from '../Collector'
-import { IScheduler } from '../Scheduler'
-import IMetatransaction, { EMetatransactionStatus } from '../common/IMetatransaction'
+import { EMetatransactionStatus } from '../common/IMetatransaction'
+import { ExecutorMock, SchedulerMock } from './mocks'
 import mockDate from 'jest-mock-now'
 
 const { toBN } = Web3.utils
@@ -21,25 +20,6 @@ const { toBN } = Web3.utils
 jest.setTimeout(27000)
 
 const DB_NAME = 'test_db_core'
-
-class SchedulerMock implements IScheduler {
-  async start (task: () => Promise<void>) {
-    await task()
-  }
-
-  async stop () {
-  }
-}
-
-class ExecutorMock implements IExecutor {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async execute (transaction: IMetatransaction) {
-    // do nothing
-  }
-
-  async stopEngine () {
-  }
-}
 
 describe('Core', function (this: {
   dbConnection: Connection;
@@ -81,9 +61,9 @@ describe('Core', function (this: {
 
   test('Should sync transactions after a restart', async () => {
     const incData = getMethodSigIncData(this.setup.web3)
-    const timestamp1 = addMinutes(new Date(), 15)
 
     for (let i = 0; i < 2; i++) {
+      const timestamp1 = addMinutes(new Date(), 15 + i)
       await this.setup.scheduleTransaction(0, incData, toBN(0), timestamp1)
     }
 
@@ -96,8 +76,8 @@ describe('Core', function (this: {
 
     expect(firstCount).toBe(2)
 
-    const timestamp2 = addMinutes(new Date(), 15)
     for (let i = 0; i < 2; i++) {
+      const timestamp2 = addMinutes(new Date(), 30 + i)
       await this.setup.scheduleTransaction(0, incData, toBN(0), timestamp2)
     }
 
@@ -118,12 +98,13 @@ describe('Core', function (this: {
     await this.core.start()
 
     const incData = getMethodSigIncData(this.setup.web3)
-    const timestamp = addMinutes(new Date(), 15)
 
     for (let i = 0; i < 2; i++) {
+      const timestamp = addMinutes(new Date(), 15 + i)
       await this.setup.scheduleTransaction(0, incData, toBN(0), timestamp)
     }
 
+    await sleep(2000)
     const count = await this.repository.count()
 
     expect(count).toBe(2)
@@ -148,7 +129,7 @@ describe('Core', function (this: {
 
     const cachedTx = await this.repository.findOne({
       where: {
-        index: transaction.index
+        id: transaction.id
       }
     })
 
