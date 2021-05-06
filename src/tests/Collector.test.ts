@@ -112,13 +112,13 @@ describe('Collector', function (this: {
       id: 'hashedid2',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus('hashedid2', EMetatransactionStatus.executed)
+    await this.cache.changeStatus('hashedid2', EMetatransactionStatus.ExecutionSuccessful)
     await this.cache.save({
       ...mockMetatransaction,
       id: 'hashedid3',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus('hashedid3', EMetatransactionStatus.failed)
+    await this.cache.changeStatus('hashedid3', EMetatransactionStatus.ExecutionFailed)
 
     const count = await this.repository.count()
 

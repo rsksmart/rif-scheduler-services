@@ -17,7 +17,7 @@ export class Collector {
     const transactionsToTimestamp = await this.repository.find({
       where: {
         timestamp: LessThanOrEqual(isoTimestamp),
-        status: EMetatransactionStatus.scheduled
+        status: EMetatransactionStatus.Scheduled
       }
     })
 

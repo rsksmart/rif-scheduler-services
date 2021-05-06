@@ -27,7 +27,7 @@ export class Cache {
         transaction.timestamp.toISOString(),
         transaction.value,
         transaction.blockNumber,
-        EMetatransactionStatus.scheduled
+        EMetatransactionStatus.Scheduled
       )
     )
 
