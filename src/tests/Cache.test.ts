@@ -31,7 +31,7 @@ describe('Cache', function (this: {
   test('Should add a new scheduled transaction', async () => {
     const date = addMinutes(new Date(), -2)
 
-    const key = await this.cache.save({
+    const id = await this.cache.save({
       id: 'hashedid1',
       requestor: '123',
       plan: 0,
@@ -45,7 +45,7 @@ describe('Cache', function (this: {
 
     const count = await this.repository.count()
 
-    expect(key).toBeGreaterThan(0)
+    expect(id).toBe('hashedid1')
     expect(count).toBe(1)
   })
 

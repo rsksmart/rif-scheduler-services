@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm'
+import { Entity, Column, Index, PrimaryColumn } from 'typeorm'
 
 @Entity()
 export class ScheduledTransaction {
@@ -26,11 +26,7 @@ export class ScheduledTransaction {
     this.status = status
   }
 
-  @PrimaryGeneratedColumn()
-  key!: number;
-
-  @Column('integer')
-  @Index({ unique: true })
+  @PrimaryColumn('text')
   id!: string;
 
   @Column('text')
@@ -54,7 +50,7 @@ export class ScheduledTransaction {
   @Column('text')
   value!: string;
 
-  @Column('integer')
+  @Column('integer', { nullable: false })
   @Index({ unique: false })
   blockNumber!: number;
 
