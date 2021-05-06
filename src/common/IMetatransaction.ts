@@ -1,4 +1,4 @@
-export enum EMetatransactionStatus {
+export enum EMetatransactionState {
   Scheduled = '0',
   ExecutionSuccessful = '1',
   ExecutionFailed = '2',

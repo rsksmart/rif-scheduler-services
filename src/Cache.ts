@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm'
-import IMetatransaction, { EMetatransactionStatus } from './common/IMetatransaction'
+import IMetatransaction, { EMetatransactionState } from './common/IMetatransaction'
 import { ScheduledTransaction } from './common/entities'
 
 export class Cache {
@@ -27,7 +27,7 @@ export class Cache {
         transaction.timestamp.toISOString(),
         transaction.value,
         transaction.blockNumber,
-        EMetatransactionStatus.Scheduled
+        EMetatransactionState.Scheduled
       )
     )
 
@@ -45,7 +45,7 @@ export class Cache {
 
   async changeStatus (
     id: string,
-    status: EMetatransactionStatus,
+    status: EMetatransactionState,
     reason?: string
   ): Promise<void> {
     const scheduledTransaction = await this.repository.findOne({

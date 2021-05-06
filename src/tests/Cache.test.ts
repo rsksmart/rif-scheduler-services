@@ -4,7 +4,7 @@ import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../common/entities'
 import { Cache } from '../Cache'
 import { addMinutes } from 'date-fns'
-import { EMetatransactionStatus } from '../common/IMetatransaction'
+import { EMetatransactionState } from '../common/IMetatransaction'
 
 jest.setTimeout(7000)
 
@@ -117,7 +117,7 @@ describe('Cache', function (this: {
       }
     }))?.status
 
-    await this.cache.changeStatus(id, EMetatransactionStatus.ExecutionSuccessful)
+    await this.cache.changeStatus(id, EMetatransactionState.ExecutionSuccessful)
 
     const newStatus = (await this.repository.findOne({
       where: {
@@ -127,7 +127,7 @@ describe('Cache', function (this: {
 
     expect(count).toBe(1)
     expect(initialStatus).not.toBe(newStatus)
-    expect(newStatus).toBe(EMetatransactionStatus.ExecutionSuccessful)
+    expect(newStatus).toBe(EMetatransactionState.ExecutionSuccessful)
   })
 
   test('Should be able to save a reason for the status change', async () => {
@@ -153,7 +153,7 @@ describe('Cache', function (this: {
       }
     }))?.status
 
-    await this.cache.changeStatus(id, EMetatransactionStatus.ExecutionFailed, 'Failed because it`s a test')
+    await this.cache.changeStatus(id, EMetatransactionState.ExecutionFailed, 'Failed because it`s a test')
 
     const result = (await this.repository.findOne({
       where: {
@@ -164,7 +164,7 @@ describe('Cache', function (this: {
     expect(count).toBe(1)
     expect(result).toBeDefined()
     expect(initialStatus).not.toBe(result?.status)
-    expect(result?.status).toBe(EMetatransactionStatus.ExecutionFailed)
+    expect(result?.status).toBe(EMetatransactionState.ExecutionFailed)
     expect(result?.reason).toBe('Failed because it`s a test')
   })
 })

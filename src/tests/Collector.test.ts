@@ -7,7 +7,7 @@ import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../common/entities'
 import { Cache } from '../Cache'
 import { Collector } from '../Collector'
-import IMetatransaction, { EMetatransactionStatus } from '../common/IMetatransaction'
+import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
 
 jest.setTimeout(17000)
 
@@ -112,13 +112,13 @@ describe('Collector', function (this: {
       id: 'hashedid2',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus('hashedid2', EMetatransactionStatus.ExecutionSuccessful)
+    await this.cache.changeStatus('hashedid2', EMetatransactionState.ExecutionSuccessful)
     await this.cache.save({
       ...mockMetatransaction,
       id: 'hashedid3',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus('hashedid3', EMetatransactionStatus.ExecutionFailed)
+    await this.cache.changeStatus('hashedid3', EMetatransactionState.ExecutionFailed)
 
     const count = await this.repository.count()
 

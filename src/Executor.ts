@@ -1,11 +1,12 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from './contracts/OneShotSchedule.json'
-import IMetatransaction, { EMetatransactionStatus } from './common/IMetatransaction'
+import IMetatransaction, { EMetatransactionState } from './common/IMetatransaction'
 import HDWalletProvider from '@truffle/hdwallet-provider'
 
 export interface IExecutor {
   execute (transaction: IMetatransaction): Promise<void>
+  getCurrentState (id: string): Promise<EMetatransactionState>
   stopEngine (): Promise<void>
 }
 
@@ -56,13 +57,9 @@ export class Executor implements IExecutor {
   }
 
   private async ensureIsScheduled (transaction: IMetatransaction) {
-    const contractTransaction = await this.oneShotScheduleContract.methods
-      .getSchedule(transaction.id).call()
+    const currentState = await this.getCurrentState(transaction.id)
 
-    const stateKey = '7'
-    const currentState = contractTransaction[stateKey]
-
-    if (currentState !== EMetatransactionStatus.Scheduled) {
+    if (currentState !== EMetatransactionState.Scheduled) {
       throw new Error('State must be Scheduled')
     }
   }
@@ -91,6 +88,13 @@ export class Executor implements IExecutor {
     } finally {
       this.hdWalletProvider.engine.stop()
     }
+  }
+
+  async getCurrentState (id: string) : Promise<EMetatransactionState> {
+    const currentState = await this.oneShotScheduleContract.methods
+      .transactionState(id).call()
+
+    return currentState as EMetatransactionState
   }
 
   async stopEngine () {

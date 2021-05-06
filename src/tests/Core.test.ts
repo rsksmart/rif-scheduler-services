@@ -11,7 +11,7 @@ import { Recoverer } from '../Recoverer'
 import { Listener } from '../Listener'
 import Core from '../Core'
 import { Collector } from '../Collector'
-import { EMetatransactionStatus } from '../common/IMetatransaction'
+import { EMetatransactionState } from '../common/IMetatransaction'
 import { ExecutorMock, SchedulerMock } from './mocks'
 import mockDate from 'jest-mock-now'
 
@@ -139,7 +139,7 @@ describe('Core', function (this: {
     expect(this.executorExecuteSpied).toBeCalledTimes(1)
     expect(this.executorExecuteSpied).toBeCalledWith(transaction)
     expect(cachedTx).toBeDefined()
-    expect(cachedTx?.status).toBe(EMetatransactionStatus.ExecutionSuccessful)
+    expect(cachedTx?.status).toBe(EMetatransactionState.ExecutionSuccessful)
 
     const dateMocked = Date.now as any
     dateMocked.mockRestore()
