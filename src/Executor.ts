@@ -1,6 +1,6 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
-import OneShotScheduleData from './contract/OneShotSchedule.json'
+import OneShotScheduleData from './contracts/OneShotSchedule.json'
 import IMetatransaction from './common/IMetatransaction'
 import HDWalletProvider from '@truffle/hdwallet-provider'
 
