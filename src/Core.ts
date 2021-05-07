@@ -62,15 +62,16 @@ class Core {
       const collectedTx = await this.collector.collectSince(new Date(Date.now()))
 
       for (const transaction of collectedTx) {
-        let resultError: Error | undefined
-        try {
-          await this.executor.execute(transaction)
-        } catch (error) {
-          this.logger.error(error)
-          resultError = error
-        }
+        const error = await this.executor
+          .execute(transaction)
+          .catch(error => error)
+
         const resultState = await this.executor.getCurrentState(transaction.id)
-        await this.cache.changeStatus(transaction.id, resultState, resultError?.message)
+        await this.cache.changeStatus(transaction.id, resultState, error?.message)
+
+        if (error) {
+          this.logger.error(error)
+        }
       }
     })
   }
