@@ -6,6 +6,7 @@
   "types": "lib",
   "scripts": {
     "start": "nodemon",
+    "demo": "nodemon --demo",
     "ganache": "npx ganache-cli",
     "test": "npx jest src/*/* --verbose --coverage --runInBand",
     "test:ci": "npx jest src/*/* --coverage --ci --runInBand",

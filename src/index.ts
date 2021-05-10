@@ -1,10 +1,8 @@
 import Web3 from 'web3'
 import { ISetup, setupContracts } from './tests/setupContracts'
-import { sendBalanceToProviderAccount } from './tests/sendBalanceToProviderAccount'
-import { addMinutes } from 'date-fns'
-import { getMethodSigIncData } from './tests/utils'
 import { ScheduledTransaction } from './common/entities'
 import { createDbConnection } from './common/createDbConnection'
+import { setupDemo } from './tests/setupDemo'
 import { Cache } from './Cache'
 import { Listener } from './Listener'
 import { Recoverer } from './Recoverer'
@@ -13,8 +11,6 @@ import { Scheduler } from './Scheduler'
 import { Executor } from './Executor'
 import Core from './Core'
 require('dotenv').config()
-
-const { toBN } = Web3.utils
 
 const environment = {
   DB_NAME: process.env.DB_NAME as string,
@@ -58,17 +54,11 @@ const init = async () => {
   )
   console.log('Contracts setup')
 
-  await sendBalanceToProviderAccount(web3, environment.MNEMONIC_PHRASE, environment.BLOCKCHAIN_HTTP_URL)
-  console.log('Sended balance to provider account')
-
-  const executeAt = addMinutes(new Date(), 3)
-
-  const incData = getMethodSigIncData(web3)
-
-  await setup.scheduleTransaction(0, incData, toBN(0), executeAt)
-  console.log('Transaction scheduled')
-
   const core = await createCoreInstance(setup)
+
+  if (process.argv.includes('--demo')) {
+    await setupDemo(web3, setup, environment.MNEMONIC_PHRASE, environment.BLOCKCHAIN_HTTP_URL)
+  }
 
   core.start()
   console.log('Started')
