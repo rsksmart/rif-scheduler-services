@@ -1,10 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm'
+import { Entity, Column, Index, PrimaryColumn } from 'typeorm'
 
 @Entity()
 export class ScheduledTransaction {
   constructor (
-    index: number,
-    from: string,
+    id: string,
+    requestor: string,
     plan: number,
     to: string,
     data: string,
@@ -14,8 +14,8 @@ export class ScheduledTransaction {
     blockNumber: number,
     status: string
   ) {
-    this.index = index
-    this.from = from
+    this.id = id
+    this.requestor = requestor
     this.plan = plan
     this.to = to
     this.data = data
@@ -26,15 +26,11 @@ export class ScheduledTransaction {
     this.status = status
   }
 
-  @PrimaryGeneratedColumn()
-  id!: number;
-
-  @Column('integer')
-  @Index({ unique: true })
-  index!: number;
+  @PrimaryColumn('text')
+  id!: string;
 
   @Column('text')
-  from!: string;
+  requestor!: string;
 
   @Column('integer')
   plan!: number;
@@ -54,7 +50,7 @@ export class ScheduledTransaction {
   @Column('text')
   value!: string;
 
-  @Column('integer')
+  @Column('integer', { nullable: false })
   @Index({ unique: false })
   blockNumber!: number;
 

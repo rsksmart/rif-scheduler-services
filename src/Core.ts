@@ -6,7 +6,6 @@ import { Collector } from './Collector'
 import { Tracer } from 'tracer'
 import { IScheduler } from './Scheduler'
 import { IExecutor } from './Executor'
-import { EMetatransactionStatus } from './common/IMetatransaction'
 
 class Core {
   private cache: Cache;
@@ -63,12 +62,15 @@ class Core {
       const collectedTx = await this.collector.collectSince(new Date(Date.now()))
 
       for (const transaction of collectedTx) {
-        try {
-          await this.executor.execute(transaction)
-          await this.cache.changeStatus(transaction.index, EMetatransactionStatus.executed)
-        } catch (error) {
+        const error = await this.executor
+          .execute(transaction)
+          .catch(error => error)
+
+        const resultState = await this.executor.getCurrentState(transaction.id)
+        await this.cache.changeStatus(transaction.id, resultState, error?.message)
+
+        if (error) {
           this.logger.error(error)
-          await this.cache.changeStatus(transaction.index, EMetatransactionStatus.failed, error.message)
         }
       }
     })

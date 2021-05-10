@@ -1,11 +1,12 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
-import OneShotScheduleData from './contract/OneShotSchedule.json'
-import IMetatransaction from './common/IMetatransaction'
+import OneShotScheduleData from './contracts/OneShotSchedule.json'
+import IMetatransaction, { EMetatransactionState } from './common/IMetatransaction'
 import HDWalletProvider from '@truffle/hdwallet-provider'
 
 export interface IExecutor {
   execute (transaction: IMetatransaction): Promise<void>
+  getCurrentState (id: string): Promise<EMetatransactionState>
   stopEngine (): Promise<void>
 }
 
@@ -55,25 +56,20 @@ export class Executor implements IExecutor {
     }
   }
 
-  private async ensureNotExecuted (transaction: IMetatransaction) {
-    // TODO: once we have a getState method, change this call to use it
+  private async ensureIsScheduled (transaction: IMetatransaction) {
+    const currentState = await this.getCurrentState(transaction.id)
 
-    const contractTransaction = await this.oneShotScheduleContract.methods
-      .getSchedule(transaction.index).call()
-
-    const isExecutedKey = '7'
-
-    if (contractTransaction[isExecutedKey]) {
-      throw new Error('Already executed')
+    if (currentState !== EMetatransactionState.Scheduled) {
+      throw new Error('State must be Scheduled')
     }
   }
 
   async execute (transaction: IMetatransaction) {
     try {
-      const { index } = transaction
+      const { id: index } = transaction
 
       await this.ensureConfirmations(transaction)
-      await this.ensureNotExecuted(transaction)
+      await this.ensureIsScheduled(transaction)
 
       const transactionSchedule = new this.web3.eth.Contract(
           OneShotScheduleData.abi as AbiItem[],
@@ -92,6 +88,13 @@ export class Executor implements IExecutor {
     } finally {
       this.hdWalletProvider.engine.stop()
     }
+  }
+
+  async getCurrentState (id: string) : Promise<EMetatransactionState> {
+    const currentState = await this.oneShotScheduleContract.methods
+      .transactionState(id).call()
+
+    return currentState as EMetatransactionState
   }
 
   async stopEngine () {

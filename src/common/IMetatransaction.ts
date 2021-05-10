@@ -1,11 +1,15 @@
-export enum EMetatransactionStatus {
-  scheduled = 'scheduled',
-  executed = 'executed',
-  failed = 'failed',
+export enum EMetatransactionState {
+  Scheduled = '0',
+  ExecutionSuccessful = '1',
+  ExecutionFailed = '2',
+  Overdue = '3',
+  Refunded = '4',
+  Cancelled = '5'
 }
+
 interface IMetatransaction {
-  index: number;
-  from: string;
+  id: string;
+  requestor: string;
   plan: number;
   to: string;
   data: string;

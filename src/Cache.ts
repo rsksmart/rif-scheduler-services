@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm'
-import IMetatransaction, { EMetatransactionStatus } from './common/IMetatransaction'
+import IMetatransaction, { EMetatransactionState } from './common/IMetatransaction'
 import { ScheduledTransaction } from './common/entities'
 
 export class Cache {
@@ -9,17 +9,17 @@ export class Cache {
     this.repository = repository
   }
 
-  async save (transaction: IMetatransaction): Promise<number> {
+  async save (transaction: IMetatransaction): Promise<string> {
     const cacheTransaction = await this.repository.findOne({
-      where: { index: transaction.index }
+      where: { id: transaction.id }
     })
 
     if (cacheTransaction) return cacheTransaction.id
 
     const scheduledTransaction = await this.repository.save(
       new ScheduledTransaction(
-        transaction.index,
-        transaction.from,
+        transaction.id,
+        transaction.requestor,
         transaction.plan,
         transaction.to,
         transaction.data,
@@ -27,7 +27,7 @@ export class Cache {
         transaction.timestamp.toISOString(),
         transaction.value,
         transaction.blockNumber,
-        EMetatransactionStatus.scheduled
+        EMetatransactionState.Scheduled
       )
     )
 
@@ -44,13 +44,13 @@ export class Cache {
   }
 
   async changeStatus (
-    index: number,
-    status: EMetatransactionStatus,
+    id: string,
+    status: EMetatransactionState,
     reason?: string
   ): Promise<void> {
     const scheduledTransaction = await this.repository.findOne({
       where: {
-        index
+        id
       }
     })
 
