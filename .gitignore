@@ -18,3 +18,4 @@ node_modules/
 # others
 .vscode
 junit.xml
+.env
