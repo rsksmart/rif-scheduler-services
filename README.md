@@ -29,14 +29,9 @@ BLOCKCHAIN_WS_URL=ws://127.0.0.1:8545
 BLOCKCHAIN_HTTP_URL=http://127.0.0.1:8545
 
 # 12 words mnemonic phrase of the wallet you want to use to pay the executions
-MNEMONIC_PHRASE=sample
+MNEMONIC_PHRASE=confirm fragile hobby...
 # Address of the one shoot scheduler smart contract
-ONE_SHOOT_SCHEDULER_ADDRESS=sample
-# Address of the token smart contract
-TOKEN_ADDRESS=sample
-
-# Address of the counter smart contract (this is only for demo propose)
-COUNTER_ADDRESS=sample
+ONE_SHOOT_SCHEDULER_ADDRESS=0x...
 ```
 
 ## Test
@@ -57,6 +52,32 @@ COUNTER_ADDRESS=sample
 
   ```
   test:watch
+  ```
+
+## Demo
+
+If you like to run the demo, you'll need the following environment variables in addition to what you already have in your .env file.
+
+```bash
+# Address of the token smart contract
+TOKEN_ADDRESS=0x...
+# Address of the counter smart contract
+COUNTER_ADDRESS=0x...
+```
+
+The `TOKEN_ADDRESS` is the address of the `ERC677` smart contract needed to approve the gas that will be consumed by the transactions executions and the `COUNTER_ADDRESS` is the address of the `Counter` smart contract that have a method called `inc()` useful to illustrate the execution of some smart contract.
+
+Then:
+1. Start ganache
+
+  ```
+  npx ganache-cli
+  ```
+
+2. Run demo
+
+  ```
+  npm run demo
   ```
 
 ## Lint
