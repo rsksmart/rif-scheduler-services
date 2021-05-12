@@ -1,8 +1,6 @@
-import Web3 from 'web3'
-import { ISetup, setupContracts } from './tests/setupContracts'
+import { setupDemo } from './tests/setupDemo'
 import { ScheduledTransaction } from './common/entities'
 import { createDbConnection } from './common/createDbConnection'
-import { setupDemo } from './tests/setupDemo'
 import { Cache } from './Cache'
 import { Listener } from './Listener'
 import { Recoverer } from './Recoverer'
@@ -23,17 +21,17 @@ const environment = {
   MNEMONIC_PHRASE: process.env.MNEMONIC_PHRASE as string
 }
 
-const createCoreInstance = async (setup: ISetup) => {
+const createCoreInstance = async () => {
   const dbConnection = await createDbConnection(environment.DB_NAME)
 
   const repository = dbConnection.getRepository(ScheduledTransaction)
 
   const cache = new Cache(repository)
-  const listener = new Listener(environment.BLOCKCHAIN_WS_URL, setup.oneShotScheduleContractAddress)
-  const recoverer = new Recoverer(environment.BLOCKCHAIN_HTTP_URL, setup.oneShotScheduleContractAddress)
+  const listener = new Listener(environment.BLOCKCHAIN_WS_URL, environment.ONE_SHOOT_SCHEDULER_ADDRESS)
+  const recoverer = new Recoverer(environment.BLOCKCHAIN_HTTP_URL, environment.ONE_SHOOT_SCHEDULER_ADDRESS)
   const executor = new Executor(
     environment.BLOCKCHAIN_HTTP_URL,
-    setup.oneShotScheduleContractAddress,
+    environment.ONE_SHOOT_SCHEDULER_ADDRESS,
     environment.REQUIRED_CONFIRMATIONS,
     environment.MNEMONIC_PHRASE
   )
@@ -45,19 +43,10 @@ const createCoreInstance = async (setup: ISetup) => {
 
 const init = async () => {
   console.log('Starting....')
-  const web3 = new Web3(environment.BLOCKCHAIN_HTTP_URL)
-  const setup = await setupContracts(
-    web3,
-    environment.TOKEN_ADDRESS,
-    environment.COUNTER_ADDRESS,
-    environment.ONE_SHOOT_SCHEDULER_ADDRESS
-  )
-  console.log('Contracts setup')
-
-  const core = await createCoreInstance(setup)
+  const core = await createCoreInstance()
 
   if (process.argv.includes('--demo')) {
-    await setupDemo(web3, setup, environment.MNEMONIC_PHRASE, environment.BLOCKCHAIN_HTTP_URL)
+    await setupDemo(environment)
   }
 
   core.start()
