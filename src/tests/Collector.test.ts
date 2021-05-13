@@ -1,13 +1,15 @@
 import { addMinutes } from 'date-fns'
 import { createDbConnection } from '../common/createDbConnection'
 import { deleteDatabase, resetDatabase } from './utils'
-import { ISetup, setupContracts } from './setupContracts'
+import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { sendBalanceToProviderAccount } from './sendBalanceToProviderAccount'
 import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../common/entities'
 import { Cache } from '../Cache'
 import { Collector } from '../Collector'
 import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
+import { BLOCKCHAIN_HTTP_URL, MNEMONIC_PHRASE } from './constants'
+import Web3 from 'web3'
 
 jest.setTimeout(17000)
 
@@ -17,6 +19,7 @@ describe('Collector', function (this: {
   dbConnection: Connection;
   cache: Cache;
   repository: Repository<ScheduledTransaction>;
+  web3: Web3;
   setup: ISetup
 }) {
   afterEach(async () => {
@@ -32,9 +35,17 @@ describe('Collector', function (this: {
 
     this.cache = new Cache(this.repository)
 
-    this.setup = await setupContracts()
+    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
 
-    await sendBalanceToProviderAccount(this.setup.web3)
+    const contracts = await deployAllContracts(this.web3)
+    this.setup = await setupContracts(
+      this.web3,
+      contracts.tokenAddress,
+      contracts.counterAddress,
+      contracts.oneShotScheduleAddress
+    )
+
+    await sendBalanceToProviderAccount(this.web3, MNEMONIC_PHRASE, BLOCKCHAIN_HTTP_URL)
   })
 
   test('Should collect all transactions with status scheduled until the specified timestamp', async () => {

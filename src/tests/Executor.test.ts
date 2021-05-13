@@ -3,7 +3,7 @@ import { Executor } from '../Executor'
 import { addMinutes } from 'date-fns'
 import { time } from '@openzeppelin/test-helpers'
 import { getMethodSigIncData } from './utils'
-import { ISetup, setupContracts } from './setupContracts'
+import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { sendBalanceToProviderAccount } from './sendBalanceToProviderAccount'
 import { BLOCKCHAIN_HTTP_URL, MNEMONIC_PHRASE } from './constants'
 
@@ -12,18 +12,27 @@ const { toBN } = Web3.utils
 jest.setTimeout(17000)
 
 describe('Executor', function (this: {
-  setup: ISetup
+  setup: ISetup,
+  web3: Web3
 }) {
   beforeEach(async () => {
-    this.setup = await setupContracts()
+    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
 
-    await sendBalanceToProviderAccount(this.setup.web3)
+    const contracts = await deployAllContracts(this.web3)
+    this.setup = await setupContracts(
+      this.web3,
+      contracts.tokenAddress,
+      contracts.counterAddress,
+      contracts.oneShotScheduleAddress
+    )
+
+    await sendBalanceToProviderAccount(this.web3, MNEMONIC_PHRASE, BLOCKCHAIN_HTTP_URL)
   })
 
   test('Should execute a scheduled tx', async () => {
     const CONFIRMATIONS_REQUIRED = 10
 
-    const incData = getMethodSigIncData(this.setup.web3)
+    const incData = getMethodSigIncData(this.web3)
     const timestamp = addMinutes(new Date(), 5)
 
     const transaction = await this.setup.scheduleTransaction(0, incData, toBN(0), timestamp)
@@ -35,7 +44,7 @@ describe('Executor', function (this: {
       MNEMONIC_PHRASE
     )
 
-    const currentBlockNumber = await this.setup.web3.eth.getBlockNumber()
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
     await txExecutor.execute(transaction)
@@ -44,7 +53,7 @@ describe('Executor', function (this: {
   test('Should throw error when execute a scheduled tx without the confirmations required', async () => {
     const CONFIRMATIONS_REQUIRED = 10
 
-    const incData = getMethodSigIncData(this.setup.web3)
+    const incData = getMethodSigIncData(this.web3)
     const timestamp = addMinutes(new Date(), 5)
 
     const transaction = await this.setup.scheduleTransaction(0, incData, toBN(0), timestamp)
@@ -64,7 +73,7 @@ describe('Executor', function (this: {
   test('Should throw error when execute a scheduled tx twice', async () => {
     const CONFIRMATIONS_REQUIRED = 1
 
-    const incData = getMethodSigIncData(this.setup.web3)
+    const incData = getMethodSigIncData(this.web3)
     const timestamp = addMinutes(new Date(), 5)
 
     const transaction = await this.setup.scheduleTransaction(0, incData, toBN(0), timestamp)
@@ -76,7 +85,7 @@ describe('Executor', function (this: {
       MNEMONIC_PHRASE
     )
 
-    const currentBlockNumber = await this.setup.web3.eth.getBlockNumber()
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
     await txExecutor.execute(transaction)

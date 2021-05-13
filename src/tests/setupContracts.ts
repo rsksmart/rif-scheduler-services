@@ -5,7 +5,6 @@ import IMetatransaction from '../common/IMetatransaction'
 import ERC677Data from '../contracts/ERC677.json'
 import CounterData from '../contracts/Counter.json'
 import OneShotScheduleData from '../contracts/OneShotSchedule.json'
-import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { deployContract } from './utils'
 
 export interface ISetup {
@@ -14,31 +13,15 @@ export interface ISetup {
   counter: any;
   accounts: { requestor: string, serviceProvider: string, payee: string, contractAdmin: string};
   plans: any[],
-  web3: Web3;
   scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<IMetatransaction>;
 }
 
-export const setupContracts = async (): Promise<ISetup> => {
-  const web3 = new Web3(BLOCKCHAIN_HTTP_URL)
-  const [
-    requestorAccountAddress,
-    serviceProviderAccountAddress,
-    payeeAccountAddress,
-    contractAdminAccountAddress
-  ] = await web3.eth.getAccounts()
+export const deployAllContracts = async (
+  web3: Web3
+) => {
+  const accounts = await getAccounts(web3)
 
-  const accounts = {
-    requestor: requestorAccountAddress,
-    serviceProvider: serviceProviderAccountAddress,
-    payee: payeeAccountAddress,
-    contractAdmin: contractAdminAccountAddress
-  }
   web3.eth.defaultAccount = accounts.contractAdmin
-
-  const plans = [
-    { price: toBN(15), window: toBN(10000) },
-    { price: toBN(4), window: toBN(300) }
-  ]
 
   const token = await deployContract(
     web3,
@@ -60,6 +43,59 @@ export const setupContracts = async (): Promise<ISetup> => {
       OneShotScheduleData.bytecode,
       [accounts.serviceProvider, accounts.payee]
   )
+
+  return {
+    tokenAddress: token.options.address,
+    counterAddress: counter.options.address,
+    oneShotScheduleAddress: oneShotScheduleContract.options.address
+  }
+}
+
+export const getAccounts = async (web3: Web3) => {
+  const [
+    requestorAccountAddress,
+    serviceProviderAccountAddress,
+    payeeAccountAddress,
+    contractAdminAccountAddress
+  ] = await web3.eth.getAccounts()
+
+  const accounts = {
+    requestor: requestorAccountAddress,
+    serviceProvider: serviceProviderAccountAddress,
+    payee: payeeAccountAddress,
+    contractAdmin: contractAdminAccountAddress
+  }
+
+  return accounts
+}
+
+export const setupContracts = async (
+  web3: Web3,
+  tokenAddress: string,
+  counterAddress: string,
+  oneShotScheduleAddress: string
+): Promise<ISetup> => {
+  const oneShotScheduleContract = new web3.eth.Contract(
+    OneShotScheduleData.abi as AbiItem[],
+    oneShotScheduleAddress
+  )
+  const token = new web3.eth.Contract(
+    ERC677Data.abi as AbiItem[],
+    tokenAddress
+  )
+  const counter = new web3.eth.Contract(
+    CounterData.abi as AbiItem[],
+    counterAddress
+  )
+
+  const accounts = await getAccounts(web3)
+
+  web3.eth.defaultAccount = accounts.contractAdmin
+
+  const plans = [
+    { price: toBN(15), window: toBN(10000) },
+    { price: toBN(4), window: toBN(300) }
+  ]
 
   const tokenTransferGas = await token.methods
     .transfer(accounts.requestor, 100000)
@@ -113,7 +149,6 @@ export const setupContracts = async (): Promise<ISetup> => {
     counter,
     accounts,
     plans,
-    web3,
     scheduleTransaction
   }
 }

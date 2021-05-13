@@ -1,6 +1,6 @@
 import { createDbConnection } from '../common/createDbConnection'
 import { deleteDatabase, getMethodSigIncData, resetDatabase, sleep } from './utils'
-import { ISetup, setupContracts } from './setupContracts'
+import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL, BLOCKCHAIN_WS_URL } from './constants'
 import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../common/entities'
@@ -25,10 +25,11 @@ describe('Core', function (this: {
   dbConnection: Connection;
   cache: Cache;
   repository: Repository<ScheduledTransaction>;
-  setup: ISetup
-  core: Core,
-  executorExecuteSpied: any,
-  collectorCollectSinceSpied: any,
+  web3: Web3;
+  setup: ISetup;
+  core: Core;
+  executorExecuteSpied: any;
+  collectorCollectSinceSpied: any;
   schedulerStartSpied: any
 }) {
   afterEach(async () => {
@@ -43,7 +44,15 @@ describe('Core', function (this: {
 
     this.repository = this.dbConnection.getRepository(ScheduledTransaction)
 
-    this.setup = await setupContracts()
+    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
+
+    const contracts = await deployAllContracts(this.web3)
+    this.setup = await setupContracts(
+      this.web3,
+      contracts.tokenAddress,
+      contracts.counterAddress,
+      contracts.oneShotScheduleAddress
+    )
 
     this.cache = new Cache(this.repository)
     const listener = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotScheduleContractAddress)
@@ -60,7 +69,7 @@ describe('Core', function (this: {
   })
 
   test('Should sync transactions after a restart', async () => {
-    const incData = getMethodSigIncData(this.setup.web3)
+    const incData = getMethodSigIncData(this.web3)
 
     for (let i = 0; i < 2; i++) {
       const timestamp1 = addMinutes(new Date(), 15 + i)
@@ -97,7 +106,7 @@ describe('Core', function (this: {
   test('Should cache new scheduled transactions', async () => {
     await this.core.start()
 
-    const incData = getMethodSigIncData(this.setup.web3)
+    const incData = getMethodSigIncData(this.web3)
 
     for (let i = 0; i < 2; i++) {
       const timestamp = addMinutes(new Date(), 15 + i)
@@ -119,7 +128,7 @@ describe('Core', function (this: {
   test('Should collect and execute cached tx`s', async () => {
     const DIFF_IN_MINUTES = 15
 
-    const incData = getMethodSigIncData(this.setup.web3)
+    const incData = getMethodSigIncData(this.web3)
     const timestampFuture = addMinutes(new Date(), DIFF_IN_MINUTES)
     mockDate(timestampFuture)
 
