@@ -18,7 +18,8 @@ const environment = {
   ONE_SHOOT_SCHEDULER_ADDRESS: process.env.ONE_SHOOT_SCHEDULER_ADDRESS as string,
   COUNTER_ADDRESS: process.env.COUNTER_ADDRESS as string,
   TOKEN_ADDRESS: process.env.TOKEN_ADDRESS as string,
-  MNEMONIC_PHRASE: process.env.MNEMONIC_PHRASE as string
+  MNEMONIC_PHRASE: process.env.MNEMONIC_PHRASE as string,
+  SCHEDULER_CRON_EXPRESSION: process.env.SCHEDULER_CRON_EXPRESSION as string
 }
 
 const createCoreInstance = async () => {
@@ -36,7 +37,7 @@ const createCoreInstance = async () => {
     environment.MNEMONIC_PHRASE
   )
   const collector = new Collector(repository)
-  const scheduler = new Scheduler()
+  const scheduler = new Scheduler(environment.SCHEDULER_CRON_EXPRESSION)
 
   return new Core(recoverer, listener, cache, collector, executor, scheduler)
 }
