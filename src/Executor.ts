@@ -2,7 +2,7 @@ import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from './contracts/OneShotSchedule.json'
 import IMetatransaction, { EMetatransactionState } from './common/IMetatransaction'
-import HDWalletProvider from '@truffle/hdwallet-provider'
+const HDWalletProvider = require('@truffle/hdwallet-provider')
 
 export interface IExecutor {
   execute (transaction: IMetatransaction): Promise<void>
@@ -12,7 +12,7 @@ export interface IExecutor {
 
 export class Executor implements IExecutor {
   private web3: Web3;
-  private hdWalletProvider: HDWalletProvider;
+  private hdWalletProvider: any;
   private oneShotScheduleContract: any;
   private confirmationsRequired: number;
   private contractAddress: string;

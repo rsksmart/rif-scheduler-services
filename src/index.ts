@@ -43,7 +43,7 @@ const createCoreInstance = async () => {
 }
 
 const init = async () => {
-  console.log('Starting....')
+  console.log('Starting....', environment)
   const core = await createCoreInstance()
 
   if (process.argv.includes('--demo')) {

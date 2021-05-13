@@ -1,5 +1,5 @@
 import Web3 from 'web3'
-import HDWalletProvider from '@truffle/hdwallet-provider'
+const HDWalletProvider = require('@truffle/hdwallet-provider')
 
 export const sendBalanceToProviderAccount = async (web3: Web3, mnemonicPhrase: string, blockchainHttpUrl: string) => {
   // send balance to provider account - needs refactor
