@@ -1,4 +1,7 @@
 import Web3 from 'web3'
+
+// HDWallet must be imported with require otherwise npm run build will fail
+// Issue: https://github.com/trufflesuite/truffle/issues/2855
 const HDWalletProvider = require('@truffle/hdwallet-provider')
 
 export const sendBalanceToProviderAccount = async (web3: Web3, mnemonicPhrase: string, blockchainHttpUrl: string) => {
