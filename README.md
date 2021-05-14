@@ -91,6 +91,33 @@ Then:
   npm run demo
   ```
 
+## Deployment with docker
+
+1. Create a `.env.prod` file with the same variables specified in the `Setup` section.
+
+2. From the root of the project execute the following commands:
+
+  ```
+  docker-compose build
+  docker-compose up -d
+  ```
+
+3. *[Optional]* Monitoring with [Datadog](https://www.datadoghq.com/):
+
+Execute the following command (don't forget to replace `YOUR_DD_API_KEY` with your api key from Datadog):
+
+  ```
+docker run -d --name datadog-agent \
+           -e DD_API_KEY=YOUR_DD_API_KEY \
+           -e DD_LOGS_ENABLED=true \
+           -e DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true \
+           -e DD_CONTAINER_EXCLUDE_LOGS="name:datadog-agent" \
+           -v /var/run/docker.sock:/var/run/docker.sock:ro \
+           -v /proc/:/host/proc/:ro \
+           -v /opt/datadog-agent/run:/opt/datadog-agent/run:rw \
+           -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro datadog/agent:latest
+  ```
+
 ## Lint
 
 ```
