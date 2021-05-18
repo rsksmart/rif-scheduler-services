@@ -67,7 +67,7 @@ class Core {
           .catch(error => error)
 
         const resultState = await this.executor.getCurrentState(transaction.id)
-        await this.cache.changeStatus(transaction.id, resultState, error?.message)
+        await this.cache.changeState(transaction.id, resultState, error?.message)
 
         if (error) {
           this.logger.error(error)

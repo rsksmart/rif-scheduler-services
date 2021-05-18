@@ -43,7 +43,9 @@ export type ExecutionPurchased = ContractEventLog<{
 }>;
 export type ExecutionRequested = ContractEventLog<{
   id: string;
+  timestamp: string;
   0: string;
+  1: string;
 }>;
 export type PlanAdded = ContractEventLog<{
   index: string;
@@ -142,6 +144,14 @@ export interface OneShotSchedule extends BaseContract {
     getSchedule(
       id: string | number[]
     ): NonPayableTransactionObject<{
+      requestor: string;
+      plan: string;
+      to: string;
+      data: string;
+      gas: string;
+      timestamp: string;
+      value: string;
+      state: string;
       0: string;
       1: string;
       2: string;

@@ -30,18 +30,12 @@ describe('Collector', function (this: {
     this.cache = new Cache(this.repository)
   })
 
-  test('Should collect all transactions with status scheduled until the specified timestamp', async () => {
+  test('Should collect all transactions with state scheduled until the specified timestamp', async () => {
     const timestamp = addMinutes(new Date(), 30)
 
     const mockMetatransaction: IMetatransaction = {
       id: 'none',
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
       timestamp: new Date(),
-      value: '',
       blockNumber: 1
     }
 
@@ -80,18 +74,12 @@ describe('Collector', function (this: {
     })
   })
 
-  test('Should collect transactions only with status scheduled', async () => {
+  test('Should collect transactions only with state scheduled', async () => {
     const timestamp = addMinutes(new Date(), 30)
 
     const mockMetatransaction: IMetatransaction = {
       id: 'none',
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
       timestamp: new Date(),
-      value: '',
       blockNumber: 1
     }
 
@@ -105,13 +93,13 @@ describe('Collector', function (this: {
       id: 'hashedid2',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus('hashedid2', EMetatransactionState.ExecutionSuccessful)
+    await this.cache.changeState('hashedid2', EMetatransactionState.ExecutionSuccessful)
     await this.cache.save({
       ...mockMetatransaction,
       id: 'hashedid3',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus('hashedid3', EMetatransactionState.ExecutionFailed)
+    await this.cache.changeState('hashedid3', EMetatransactionState.ExecutionFailed)
 
     const count = await this.repository.count()
 

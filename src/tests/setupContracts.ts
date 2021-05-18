@@ -1,6 +1,6 @@
 import Web3 from 'web3'
 import { AbiItem, toBN } from 'web3-utils'
-import parseSchedule from '../common/parseSchedule'
+import parseBlockchainTimestamp from '../common/parseBlockchainTimestamp'
 import IMetatransaction from '../common/IMetatransaction'
 import ERC677Data from '../contracts/ERC677.json'
 import { ERC677 } from '../contracts/types/ERC677'
@@ -151,15 +151,11 @@ export const setupContracts = async (
       .schedule(plan, to, data, gas, timestampContract)
       .send({ from: accounts.requestor, value, gas: scheduleGas })
 
-    const getScheduleResult = await oneShotScheduleContract.methods
-      .getSchedule(receipt.events?.ExecutionRequested.returnValues.id)
-      .call()
-
-    return parseSchedule({
+    return {
       blockNumber: receipt.events?.ExecutionRequested.blockNumber as number,
       id: receipt.events?.ExecutionRequested.returnValues.id,
-      values: getScheduleResult
-    })
+      timestamp: parseBlockchainTimestamp(receipt.events?.ExecutionRequested.returnValues.timestamp)
+    }
   }
 
   return {

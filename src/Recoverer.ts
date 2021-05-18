@@ -3,7 +3,7 @@ import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from './contracts/OneShotSchedule.json'
 import { OneShotSchedule, ExecutionRequested } from './contracts/types/OneShotSchedule'
 import IMetatransaction from './common/IMetatransaction'
-import parseSchedule from './common/parseSchedule'
+import parseBlockchainTimestamp from './common/parseBlockchainTimestamp'
 
 /**
  * This module recovers all the events that happened since a certain block.
@@ -35,16 +35,10 @@ export class Recoverer {
       }
     )
 
-    const result = pastEvents.map(async (event) => {
-      const getScheduleResult = await this.contract.methods.getSchedule(event.returnValues.id).call()
-
-      return parseSchedule({
-        blockNumber: event.blockNumber,
-        id: event.returnValues.id,
-        values: getScheduleResult
-      })
-    })
-
-    return await Promise.all(result)
+    return pastEvents.map<IMetatransaction>((event) => ({
+      blockNumber: event.blockNumber,
+      id: event.returnValues.id,
+      timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
+    }))
   }
 }

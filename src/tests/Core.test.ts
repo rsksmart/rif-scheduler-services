@@ -136,7 +136,7 @@ describe('Core', function (this: {
     expect(this.executorExecuteSpied).toBeCalledTimes(1)
     expect(this.executorExecuteSpied).toBeCalledWith(transaction)
     expect(cachedTx).toBeDefined()
-    expect(cachedTx?.status).toBe(EMetatransactionState.ExecutionSuccessful)
+    expect(cachedTx?.state).toBe(EMetatransactionState.ExecutionSuccessful)
 
     const dateMocked = Date.now as any
     dateMocked.mockRestore()

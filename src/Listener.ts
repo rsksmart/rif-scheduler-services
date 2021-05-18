@@ -5,7 +5,7 @@ import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from './contracts/OneShotSchedule.json'
 import { OneShotSchedule } from './contracts/types/OneShotSchedule'
 import IMetatransaction from './common/IMetatransaction'
-import parseSchedule from './common/parseSchedule'
+import parseBlockchainTimestamp from './common/parseBlockchainTimestamp'
 
 export const newScheduledTransactionsError = 'newScheduledTransactionsError'
 export const webSocketProviderError = 'webSocketProviderError'
@@ -34,20 +34,18 @@ export class Listener extends EventEmitter {
   }
 
   async listenNewScheduledTransactions (
-    callback: (eventValues: IMetatransaction) => Promise<void>
+    invoke: (eventValues: IMetatransaction) => Promise<void>
   ) {
     this.contract.events.ExecutionRequested(
       {},
       async (error, event) => {
         if (error) return this.emit(newScheduledTransactionsError, error)
 
-        const getScheduleResult = await this.contract.methods.getSchedule(event.returnValues.id).call()
-
-        callback(parseSchedule({
+        invoke({
           blockNumber: event.blockNumber,
           id: event.returnValues.id,
-          values: getScheduleResult
-        }))
+          timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
+        })
       }
     )
   }
