@@ -43,7 +43,6 @@ const createCoreInstance = async () => {
 }
 
 const init = async () => {
-  console.log('Starting....')
   const core = await createCoreInstance()
 
   if (process.argv.includes('--demo')) {
@@ -51,7 +50,6 @@ const init = async () => {
   }
 
   core.start()
-  console.log('Started')
 }
 
 init()

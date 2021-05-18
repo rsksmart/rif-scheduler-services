@@ -8,9 +8,8 @@ coverage
 # build
 lib
 
-# db
-process-cache.db
-process-cache.db-journal
+# storage
+storage
 
 # Dependency directories
 node_modules/
@@ -19,3 +18,4 @@ node_modules/
 .vscode
 junit.xml
 .env
+.env.prod
