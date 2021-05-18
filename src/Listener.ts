@@ -3,8 +3,9 @@ import Web3 from 'web3'
 import { WebsocketProvider } from 'web3-core/types/index'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from './contracts/OneShotSchedule.json'
+import { OneShotSchedule } from './contracts/types/OneShotSchedule'
 import IMetatransaction from './common/IMetatransaction'
-import parseEvent from './common/parseEvent'
+import parseSchedule from './common/parseSchedule'
 
 export const newScheduledTransactionsError = 'newScheduledTransactionsError'
 export const webSocketProviderError = 'webSocketProviderError'
@@ -15,7 +16,7 @@ export const webSocketProviderError = 'webSocketProviderError'
  */
 export class Listener extends EventEmitter {
   private webSocketProvider: WebsocketProvider;
-  private contract: any;
+  private contract: OneShotSchedule;
 
   constructor (rpcUrl: string, contractAddress: string) {
     super()
@@ -26,20 +27,27 @@ export class Listener extends EventEmitter {
 
     const web3 = new Web3(this.webSocketProvider)
 
-    this.contract = new web3.eth.Contract(
+    this.contract = (new web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
       contractAddress
-    )
+    ) as any) as OneShotSchedule
   }
 
   async listenNewScheduledTransactions (
     callback: (eventValues: IMetatransaction) => Promise<void>
   ) {
-    this.contract.events.MetatransactionAdded(
+    this.contract.events.ExecutionRequested(
       {},
-      (error, event) => {
+      async (error, event) => {
         if (error) return this.emit(newScheduledTransactionsError, error)
-        callback(parseEvent(event))
+
+        const getScheduleResult = await this.contract.methods.getSchedule(event.returnValues.id).call()
+
+        callback(parseSchedule({
+          blockNumber: event.blockNumber,
+          id: event.returnValues.id,
+          values: getScheduleResult
+        }))
       }
     )
   }

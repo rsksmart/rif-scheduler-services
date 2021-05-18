@@ -1,10 +1,13 @@
 import Web3 from 'web3'
 import { AbiItem, toBN } from 'web3-utils'
-import parseEvent from '../common/parseEvent'
+import parseSchedule from '../common/parseSchedule'
 import IMetatransaction from '../common/IMetatransaction'
 import ERC677Data from '../contracts/ERC677.json'
+import { ERC677 } from '../contracts/types/ERC677'
 import CounterData from '../contracts/Counter.json'
+import { Counter } from '../contracts/types/Counter'
 import OneShotScheduleData from '../contracts/OneShotSchedule.json'
+import { OneShotSchedule } from '../contracts/types/OneShotSchedule'
 import { deployContract } from './utils'
 
 export interface ISetup {
@@ -23,26 +26,33 @@ export const deployAllContracts = async (
 
   web3.eth.defaultAccount = accounts.contractAdmin
 
-  const token = await deployContract(
+  const token = (await deployContract(
     web3,
       ERC677Data.abi as AbiItem[],
       ERC677Data.bytecode,
       [accounts.contractAdmin, toBN('1000000000000000000000'), 'RIFOS', 'RIF']
-  )
+  ) as any) as ERC677
 
-  const counter = await deployContract(
+  const counter = (await deployContract(
     web3,
       CounterData.abi as AbiItem[],
       CounterData.bytecode,
       []
-  )
+  ) as any) as Counter
 
-  const oneShotScheduleContract = await deployContract(
+  const oneShotScheduleContract = (await deployContract(
     web3,
       OneShotScheduleData.abi as AbiItem[],
       OneShotScheduleData.bytecode,
-      [accounts.serviceProvider, accounts.payee]
-  )
+      []
+  ) as any) as OneShotSchedule
+
+  const initializeGas = await oneShotScheduleContract.methods
+    .initialize(accounts.serviceProvider, accounts.payee)
+    .estimateGas({ from: web3.eth.defaultAccount })
+  await oneShotScheduleContract.methods
+    .initialize(accounts.serviceProvider, accounts.payee)
+    .send({ from: web3.eth.defaultAccount, gas: initializeGas })
 
   return {
     tokenAddress: token.options.address,
@@ -75,18 +85,18 @@ export const setupContracts = async (
   counterAddress: string,
   oneShotScheduleAddress: string
 ): Promise<ISetup> => {
-  const oneShotScheduleContract = new web3.eth.Contract(
+  const oneShotScheduleContract = (new web3.eth.Contract(
     OneShotScheduleData.abi as AbiItem[],
     oneShotScheduleAddress
-  )
-  const token = new web3.eth.Contract(
+  ) as any) as OneShotSchedule
+  const token = (new web3.eth.Contract(
     ERC677Data.abi as AbiItem[],
     tokenAddress
-  )
-  const counter = new web3.eth.Contract(
+  ) as any) as ERC677
+  const counter = (new web3.eth.Contract(
     CounterData.abi as AbiItem[],
     counterAddress
-  )
+  ) as any) as Counter
 
   const accounts = await getAccounts(web3)
 
@@ -107,6 +117,7 @@ export const setupContracts = async (
   const addPlanGas = await oneShotScheduleContract.methods
     .addPlan(plans[0].price, plans[0].window, token.options.address)
     .estimateGas({ from: accounts.serviceProvider })
+
   await oneShotScheduleContract.methods
     .addPlan(plans[0].price, plans[0].window, token.options.address)
     .send({ from: accounts.serviceProvider, gas: addPlanGas })
@@ -140,7 +151,15 @@ export const setupContracts = async (
       .schedule(plan, to, data, gas, timestampContract)
       .send({ from: accounts.requestor, value, gas: scheduleGas })
 
-    return parseEvent(receipt.events.MetatransactionAdded)
+    const getScheduleResult = await oneShotScheduleContract.methods
+      .getSchedule(receipt.events?.ExecutionRequested.returnValues.id)
+      .call()
+
+    return parseSchedule({
+      blockNumber: receipt.events?.ExecutionRequested.blockNumber as number,
+      id: receipt.events?.ExecutionRequested.returnValues.id,
+      values: getScheduleResult
+    })
   }
 
   return {
