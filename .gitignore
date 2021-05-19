@@ -21,4 +21,4 @@ junit.xml
 .env.prod
 
 # typechain generated files
-src/contracts/types
+src/contracts/types/
