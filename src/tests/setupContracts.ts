@@ -9,14 +9,29 @@ import { Counter } from '../contracts/types/Counter'
 import OneShotScheduleData from '../contracts/OneShotSchedule.json'
 import { OneShotSchedule } from '../contracts/types/OneShotSchedule'
 import { deployContract } from './utils'
+import BN from 'bn.js'
 
+export interface IScheduleRequest {
+  plan: number,
+  timestamp: Date,
+  executeAddress?: string,
+  executeMethod?: string,
+  executeGas?: BN,
+  executeValue?: string | number | BN | undefined
+}
 export interface ISetup {
-  oneShotScheduleContractAddress: string;
-  token: any;
-  counter: any;
-  accounts: { requestor: string, serviceProvider: string, payee: string, contractAdmin: string};
+  oneShotSchedule: OneShotSchedule;
+  token: ERC677;
+  counter: Counter;
+  accounts: { requestor: string, serviceProvider: string, payee: string, contractAdmin: string},
   plans: any[],
-  scheduleTransaction: (plan: number, data: any, value: any, timestamp: Date) => Promise<IMetatransaction>;
+  scheduleTransaction: (scheduleRequest: IScheduleRequest) => Promise<IMetatransaction>,
+  getExecutionParameters: (
+    abi: AbiItem[],
+    contractAddress: string,
+    methodName: string,
+    methodParams: string[]
+  ) => Promise<{ executeMethod: string, executeGas: BN }>
 }
 
 export const deployAllContracts = async (
@@ -85,7 +100,7 @@ export const setupContracts = async (
   counterAddress: string,
   oneShotScheduleAddress: string
 ): Promise<ISetup> => {
-  const oneShotScheduleContract = (new web3.eth.Contract(
+  const oneShotSchedule = (new web3.eth.Contract(
     OneShotScheduleData.abi as AbiItem[],
     oneShotScheduleAddress
   ) as any) as OneShotSchedule
@@ -114,42 +129,72 @@ export const setupContracts = async (
     .transfer(accounts.requestor, 100000)
     .send({ from: accounts.contractAdmin, gas: tokenTransferGas })
 
-  const addPlanGas = await oneShotScheduleContract.methods
+  const addPlanGas = await oneShotSchedule.methods
     .addPlan(plans[0].price, plans[0].window, token.options.address)
     .estimateGas({ from: accounts.serviceProvider })
 
-  await oneShotScheduleContract.methods
+  await oneShotSchedule.methods
     .addPlan(plans[0].price, plans[0].window, token.options.address)
     .send({ from: accounts.serviceProvider, gas: addPlanGas })
 
-  const scheduleTransaction = async (plan: number, data: any, value: any, timestamp: Date): Promise<IMetatransaction> => {
+  const getExecutionParameters = async (
+    abi: AbiItem[],
+    contractAddress: string,
+    methodName: string,
+    methodParams: string[]
+  ): Promise<{ executeMethod: string, executeGas: BN }> => {
+    const abiFunction = abi.find(x => x.type === 'function' && x.name === methodName)
+    if (!abiFunction) {
+      throw new Error('The name of the method specified does not exist.')
+    }
+
+    const executeMethod = web3.eth.abi.encodeFunctionCall(abiFunction, methodParams)
+
+    const executeGas = toBN(await web3.eth.estimateGas({
+      data: executeMethod,
+      to: contractAddress
+    }))
+
+    return {
+      executeMethod,
+      executeGas
+    }
+  }
+
+  const counterExecutionParameters = await getExecutionParameters(CounterData.abi as AbiItem[], counterAddress, 'inc', [])
+
+  const scheduleTransaction = async ({
+    plan = 0,
+    executeAddress = counterAddress,
+    executeMethod = counterExecutionParameters.executeMethod,
+    executeGas = counterExecutionParameters.executeGas,
+    executeValue,
+    timestamp
+  }: IScheduleRequest): Promise<IMetatransaction> => {
     const timestampContract = toBN(
       Math.floor(+timestamp / 1000)
     )
 
-    const to = counter.options.address
-    const gas = toBN(await counter.methods.inc().estimateGas())
-
     const approveGas = await token.methods
-      .approve(oneShotScheduleContract.options.address, plans[plan].price)
+      .approve(oneShotSchedule.options.address, plans[plan].price)
       .estimateGas({ from: accounts.requestor })
     await token.methods
-      .approve(oneShotScheduleContract.options.address, plans[plan].price)
+      .approve(oneShotSchedule.options.address, plans[plan].price)
       .send({ from: accounts.requestor, gas: approveGas })
 
-    const purchaseGas = await oneShotScheduleContract.methods
+    const purchaseGas = await oneShotSchedule.methods
       .purchase(plan, toBN(1))
       .estimateGas({ from: accounts.requestor })
-    await oneShotScheduleContract.methods
+    await oneShotSchedule.methods
       .purchase(plan, toBN(1))
       .send({ from: accounts.requestor, gas: purchaseGas })
 
-    const scheduleGas = await oneShotScheduleContract.methods
-      .schedule(plan, to, data, gas, timestampContract)
+    const scheduleGas = await oneShotSchedule.methods
+      .schedule(plan, executeAddress, executeMethod, executeGas, timestampContract)
       .estimateGas({ from: accounts.requestor })
-    const receipt = await oneShotScheduleContract.methods
-      .schedule(plan, to, data, gas, timestampContract)
-      .send({ from: accounts.requestor, value, gas: scheduleGas })
+    const receipt = await oneShotSchedule.methods
+      .schedule(plan, executeAddress, executeMethod, executeGas, timestampContract)
+      .send({ from: accounts.requestor, value: executeValue, gas: scheduleGas })
 
     return {
       blockNumber: receipt.events?.ExecutionRequested.blockNumber as number,
@@ -159,11 +204,12 @@ export const setupContracts = async (
   }
 
   return {
-    oneShotScheduleContractAddress: oneShotScheduleContract.options.address,
+    oneShotSchedule,
     token,
     counter,
     accounts,
     plans,
-    scheduleTransaction
+    scheduleTransaction,
+    getExecutionParameters
   }
 }

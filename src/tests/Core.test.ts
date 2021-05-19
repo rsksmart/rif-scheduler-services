@@ -1,5 +1,5 @@
 import { createDbConnection } from '../common/createDbConnection'
-import { deleteDatabase, getMethodSigIncData, resetDatabase, sleep } from './utils'
+import { deleteDatabase, resetDatabase, sleep } from './utils'
 import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL, BLOCKCHAIN_WS_URL } from './constants'
 import { Connection, Repository } from 'typeorm'
@@ -14,8 +14,6 @@ import { Collector } from '../Collector'
 import { EMetatransactionState } from '../common/IMetatransaction'
 import { ExecutorMock, SchedulerMock } from './mocks'
 import mockDate from 'jest-mock-now'
-
-const { toBN } = Web3.utils
 
 jest.setTimeout(27000)
 
@@ -55,8 +53,8 @@ describe('Core', function (this: {
     )
 
     this.cache = new Cache(this.repository)
-    const listener = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotScheduleContractAddress)
-    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotScheduleContractAddress)
+    const listener = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotSchedule.options.address)
+    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address)
     const executor = new ExecutorMock()
     const collector = new Collector(this.repository)
     const scheduler = new SchedulerMock()
@@ -71,11 +69,9 @@ describe('Core', function (this: {
   // TODO: if we stop the service then fails to reconnect
   // for now it's not possible to stop it because it hangs out
   test('Should sync transactions after a restart', async () => {
-    const incData = getMethodSigIncData(this.web3)
-
     for (let i = 0; i < 4; i++) {
       const timestamp1 = addMinutes(new Date(), 15 + i)
-      await this.setup.scheduleTransaction(0, incData, toBN(0), timestamp1)
+      await this.setup.scheduleTransaction({ plan: 0, timestamp: timestamp1 })
     }
 
     await this.core.start()
@@ -94,11 +90,9 @@ describe('Core', function (this: {
   test('Should cache new scheduled transactions', async () => {
     await this.core.start()
 
-    const incData = getMethodSigIncData(this.web3)
-
     for (let i = 0; i < 2; i++) {
       const timestamp = addMinutes(new Date(), 15 + i)
-      await this.setup.scheduleTransaction(0, incData, toBN(0), timestamp)
+      await this.setup.scheduleTransaction({ plan: 0, timestamp })
     }
 
     await sleep(2000)
@@ -116,11 +110,10 @@ describe('Core', function (this: {
   test('Should collect and execute cached tx`s', async () => {
     const DIFF_IN_MINUTES = 15
 
-    const incData = getMethodSigIncData(this.web3)
     const timestampFuture = addMinutes(new Date(), DIFF_IN_MINUTES)
     mockDate(timestampFuture)
 
-    const transaction = await this.setup.scheduleTransaction(0, incData, toBN(0), timestampFuture)
+    const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp: timestampFuture })
 
     await this.core.start()
 
