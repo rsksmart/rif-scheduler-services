@@ -1,6 +1,7 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from './contracts/OneShotSchedule.json'
+import { OneShotSchedule } from './contracts/types/OneShotSchedule'
 import IMetatransaction, { EMetatransactionState } from './common/IMetatransaction'
 
 // HDWallet must be imported with require otherwise npm run build will fail
@@ -16,7 +17,7 @@ export interface IExecutor {
 export class Executor implements IExecutor {
   private web3: Web3;
   private hdWalletProvider: any;
-  private oneShotScheduleContract: any;
+  private oneShotScheduleContract: OneShotSchedule;
   private confirmationsRequired: number;
   private contractAddress: string;
   private mnemonicPhrase: string;
@@ -43,10 +44,10 @@ export class Executor implements IExecutor {
 
     this.web3 = new Web3(this.hdWalletProvider)
 
-    this.oneShotScheduleContract = new this.web3.eth.Contract(
+    this.oneShotScheduleContract = (new this.web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
       this.contractAddress
-    )
+    ) as any) as OneShotSchedule
   }
 
   private async ensureConfirmations ({ blockNumber }: IMetatransaction) {
@@ -95,7 +96,7 @@ export class Executor implements IExecutor {
 
   async getCurrentState (id: string) : Promise<EMetatransactionState> {
     const currentState = await this.oneShotScheduleContract.methods
-      .transactionState(id).call()
+      .getState(id).call()
 
     return currentState as EMetatransactionState
   }

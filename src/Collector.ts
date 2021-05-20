@@ -17,19 +17,13 @@ export class Collector {
     const transactionsToTimestamp = await this.repository.find({
       where: {
         timestamp: LessThanOrEqual(isoTimestamp),
-        status: EMetatransactionState.Scheduled
+        state: EMetatransactionState.Scheduled
       }
     })
 
     const result = transactionsToTimestamp.map((x): IMetatransaction => {
       return {
         id: x.id,
-        requestor: x.requestor,
-        plan: x.plan,
-        to: x.to,
-        data: x.data,
-        gas: x.gas,
-        value: x.value,
         blockNumber: x.blockNumber,
         timestamp: new Date(x.timestamp)
       }

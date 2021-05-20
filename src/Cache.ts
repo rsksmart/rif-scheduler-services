@@ -19,13 +19,7 @@ export class Cache {
     const scheduledTransaction = await this.repository.save(
       new ScheduledTransaction(
         transaction.id,
-        transaction.requestor,
-        transaction.plan,
-        transaction.to,
-        transaction.data,
-        transaction.gas,
         transaction.timestamp.toISOString(),
-        transaction.value,
         transaction.blockNumber,
         EMetatransactionState.Scheduled
       )
@@ -43,9 +37,9 @@ export class Cache {
     return result?.blockNumber
   }
 
-  async changeStatus (
+  async changeState (
     id: string,
-    status: EMetatransactionState,
+    state: EMetatransactionState,
     reason?: string
   ): Promise<void> {
     const scheduledTransaction = await this.repository.findOne({
@@ -56,7 +50,7 @@ export class Cache {
 
     if (scheduledTransaction) {
       scheduledTransaction.reason = reason
-      scheduledTransaction.status = status
+      scheduledTransaction.state = state
 
       await this.repository.save(scheduledTransaction)
     }

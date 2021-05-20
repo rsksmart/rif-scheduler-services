@@ -1,11 +1,8 @@
 import Web3 from 'web3'
 import { Listener, newScheduledTransactionsError } from '../Listener'
 import { addMinutes } from 'date-fns'
-import { getMethodSigIncData } from './utils'
 import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL, BLOCKCHAIN_WS_URL } from './constants'
-
-const { toBN } = Web3.utils
 
 jest.setTimeout(17000)
 
@@ -26,7 +23,7 @@ describe('Listener', function (this: {
   })
 
   test('Should execute callback after schedule a new transaction', async (done) => {
-    const provider = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotScheduleContractAddress)
+    const provider = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotSchedule.options.address)
 
     provider.listenNewScheduledTransactions(async (event) => {
       expect(event).toBeDefined()
@@ -40,7 +37,7 @@ describe('Listener', function (this: {
 
     const timestamp = addMinutes(new Date(), 15)
 
-    await this.setup.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
+    await this.setup.scheduleTransaction({ plan: 0, timestamp })
   })
 
   test('Should not execute new scheduled tx callback when disconnected', async () => {
@@ -48,7 +45,7 @@ describe('Listener', function (this: {
 
     const callback = jest.fn()
 
-    const listener = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotScheduleContractAddress)
+    const listener = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotSchedule.options.address)
 
     listener.on(newScheduledTransactionsError, (error) => {
       expect(error.message).toEqual('connection not open on send()')
@@ -61,6 +58,6 @@ describe('Listener', function (this: {
 
     const timestamp = addMinutes(new Date(), 15)
 
-    await this.setup.scheduleTransaction(0, getMethodSigIncData(this.web3), toBN(0), timestamp)
+    await this.setup.scheduleTransaction({ plan: 0, timestamp })
   })
 })

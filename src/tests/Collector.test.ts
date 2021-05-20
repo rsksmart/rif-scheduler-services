@@ -1,15 +1,11 @@
 import { addMinutes } from 'date-fns'
 import { createDbConnection } from '../common/createDbConnection'
 import { deleteDatabase, resetDatabase } from './utils'
-import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
-import { sendBalanceToProviderAccount } from './sendBalanceToProviderAccount'
 import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../common/entities'
 import { Cache } from '../Cache'
 import { Collector } from '../Collector'
 import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
-import { BLOCKCHAIN_HTTP_URL, MNEMONIC_PHRASE } from './constants'
-import Web3 from 'web3'
 
 jest.setTimeout(17000)
 
@@ -19,8 +15,6 @@ describe('Collector', function (this: {
   dbConnection: Connection;
   cache: Cache;
   repository: Repository<ScheduledTransaction>;
-  web3: Web3;
-  setup: ISetup
 }) {
   afterEach(async () => {
     if (this.dbConnection && this.dbConnection.isConnected) {
@@ -34,32 +28,14 @@ describe('Collector', function (this: {
     this.repository = this.dbConnection.getRepository(ScheduledTransaction)
 
     this.cache = new Cache(this.repository)
-
-    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
-
-    const contracts = await deployAllContracts(this.web3)
-    this.setup = await setupContracts(
-      this.web3,
-      contracts.tokenAddress,
-      contracts.counterAddress,
-      contracts.oneShotScheduleAddress
-    )
-
-    await sendBalanceToProviderAccount(this.web3, MNEMONIC_PHRASE, BLOCKCHAIN_HTTP_URL)
   })
 
-  test('Should collect all transactions with status scheduled until the specified timestamp', async () => {
+  test('Should collect all transactions with state scheduled until the specified timestamp', async () => {
     const timestamp = addMinutes(new Date(), 30)
 
     const mockMetatransaction: IMetatransaction = {
       id: 'none',
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
       timestamp: new Date(),
-      value: '',
       blockNumber: 1
     }
 
@@ -98,18 +74,12 @@ describe('Collector', function (this: {
     })
   })
 
-  test('Should collect transactions only with status scheduled', async () => {
+  test('Should collect transactions only with state scheduled', async () => {
     const timestamp = addMinutes(new Date(), 30)
 
     const mockMetatransaction: IMetatransaction = {
       id: 'none',
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
       timestamp: new Date(),
-      value: '',
       blockNumber: 1
     }
 
@@ -123,13 +93,13 @@ describe('Collector', function (this: {
       id: 'hashedid2',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus('hashedid2', EMetatransactionState.ExecutionSuccessful)
+    await this.cache.changeState('hashedid2', EMetatransactionState.ExecutionSuccessful)
     await this.cache.save({
       ...mockMetatransaction,
       id: 'hashedid3',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeStatus('hashedid3', EMetatransactionState.ExecutionFailed)
+    await this.cache.changeState('hashedid3', EMetatransactionState.ExecutionFailed)
 
     const count = await this.repository.count()
 

@@ -38,5 +38,3 @@ export const deployContract = async (
       .then((newContractInstance: Contract) => resolve(newContractInstance))
   )
 }
-
-export const getMethodSigIncData = (web3) => web3.utils.sha3('inc()').slice(0, 10)

@@ -2,8 +2,6 @@ import Web3 from 'web3'
 import { setupContracts } from './setupContracts'
 import { sendBalanceToProviderAccount } from './sendBalanceToProviderAccount'
 import { addMinutes } from 'date-fns'
-import { getMethodSigIncData } from './utils'
-const { toBN } = Web3.utils
 
 export const setupDemo = async ({
   BLOCKCHAIN_HTTP_URL,
@@ -22,9 +20,6 @@ export const setupDemo = async ({
 
   await sendBalanceToProviderAccount(web3, MNEMONIC_PHRASE, BLOCKCHAIN_HTTP_URL)
 
-  const executeAt = addMinutes(new Date(), 3)
-
-  const incData = getMethodSigIncData(web3)
-
-  await setup.scheduleTransaction(0, incData, toBN(0), executeAt)
+  // Schedule counter.inc() to be executed within 3 minutes.
+  await setup.scheduleTransaction({ plan: 0, timestamp: addMinutes(new Date(), 3) })
 }

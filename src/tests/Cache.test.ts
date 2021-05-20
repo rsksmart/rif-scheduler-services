@@ -33,13 +33,7 @@ describe('Cache', function (this: {
 
     const id = await this.cache.save({
       id: 'hashedid1',
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
       timestamp: date,
-      value: '',
       blockNumber: 1
     })
 
@@ -55,35 +49,17 @@ describe('Cache', function (this: {
     await this.cache.save({
       id: 'hashedid1',
       blockNumber: 20,
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
-      timestamp: date,
-      value: ''
+      timestamp: date
     })
     await this.cache.save({
       id: 'hashedid2',
       blockNumber: 90,
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
-      timestamp: date,
-      value: ''
+      timestamp: date
     })
     await this.cache.save({
       id: 'hashedid3',
       blockNumber: 40,
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
-      timestamp: date,
-      value: ''
+      timestamp: date
     })
 
     const lastBlockNumber = await this.cache.getLastSyncedBlockNumber()
@@ -94,66 +70,54 @@ describe('Cache', function (this: {
     expect(lastBlockNumber).toBe(90)
   })
 
-  test('Should be able to change a tx status', async () => {
+  test('Should be able to change a tx state', async () => {
     const date = addMinutes(new Date(), -2)
     const id = 'hashedid'
 
     await this.cache.save({
       id,
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
       timestamp: date,
-      value: '',
       blockNumber: 1
     })
 
     const count = await this.repository.count()
-    const initialStatus = (await this.repository.findOne({
+    const initialState = (await this.repository.findOne({
       where: {
         id
       }
-    }))?.status
+    }))?.state
 
-    await this.cache.changeStatus(id, EMetatransactionState.ExecutionSuccessful)
+    await this.cache.changeState(id, EMetatransactionState.ExecutionSuccessful)
 
-    const newStatus = (await this.repository.findOne({
+    const newState = (await this.repository.findOne({
       where: {
         id
       }
-    }))?.status
+    }))?.state
 
     expect(count).toBe(1)
-    expect(initialStatus).not.toBe(newStatus)
-    expect(newStatus).toBe(EMetatransactionState.ExecutionSuccessful)
+    expect(initialState).not.toBe(newState)
+    expect(newState).toBe(EMetatransactionState.ExecutionSuccessful)
   })
 
-  test('Should be able to save a reason for the status change', async () => {
+  test('Should be able to save a reason for the state change', async () => {
     const date = addMinutes(new Date(), -2)
     const id = 'hashedid'
 
     await this.cache.save({
       id,
-      requestor: '123',
-      plan: 0,
-      to: '456',
-      data: '',
-      gas: 100,
       timestamp: date,
-      value: '',
       blockNumber: 1
     })
 
     const count = await this.repository.count()
-    const initialStatus = (await this.repository.findOne({
+    const initialState = (await this.repository.findOne({
       where: {
         id
       }
-    }))?.status
+    }))?.state
 
-    await this.cache.changeStatus(id, EMetatransactionState.ExecutionFailed, 'Failed because it`s a test')
+    await this.cache.changeState(id, EMetatransactionState.ExecutionFailed, 'Failed because it`s a test')
 
     const result = (await this.repository.findOne({
       where: {
@@ -163,8 +127,8 @@ describe('Cache', function (this: {
 
     expect(count).toBe(1)
     expect(result).toBeDefined()
-    expect(initialStatus).not.toBe(result?.status)
-    expect(result?.status).toBe(EMetatransactionState.ExecutionFailed)
+    expect(initialState).not.toBe(result?.state)
+    expect(result?.state).toBe(EMetatransactionState.ExecutionFailed)
     expect(result?.reason).toBe('Failed because it`s a test')
   })
 })
