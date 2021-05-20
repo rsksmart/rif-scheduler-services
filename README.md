@@ -3,67 +3,125 @@
 </p>
 <h3 align="middle">RIF Scheduler services</h3>
 <p align="middle">
-    Schedule RSK transactions
+    <a href="https://developers.rsk.co/rif/scheduler/services">
+        <img src="https://img.shields.io/badge/-docs-brightgreen" alt="docs" />
+    </a>
+    <a href="https://github.com/rsksmart/rif-scheduler-services/actions/workflows/ci.yml" alt="ci">
+        <img src="https://github.com/rsksmart/rif-scheduler-services/actions/workflows/ci.yml/badge.svg" alt="ci" />
+    </a>
+    <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-services/alerts/">
+        <img src="https://img.shields.io/lgtm/alerts/github/rsksmart/rif-scheduler-services" alt="alerts">
+    </a>
+    <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-services/context:javascript">
+        <img src="https://img.shields.io/lgtm/grade/javascript/github/rsksmart/rif-scheduler-services">
+    </a>
+    <a href="https://codecov.io/gh/rsksmart/rif-scheduler-services">
+        <img src="https://codecov.io/gh/rsksmart/rif-scheduler-contracts/branch/develop/graph/badge.svg?token=72T5TQ34HT"/>
+    </a>
 </p>
 
-## Setup
+RIF Scheduler services are used by service providers willing to offer scheduling services. Run this service to:
+- Collect the transactions that need execution
+- Execute the transactions in proper time and collect reward
 
-### 1. Install dependencies
+## Run for development
 
-```
+Install dependencies:
+
+```sh
 npm i
 ```
 
-### 2. Environment variables
+### Run unit tests
 
-Create a .env file in the root directory and put the following variables:
+1. Start ganache
 
-```bash
-# directory and name of the cache database
-DB_NAME=sample.db
-# number of confirmations you want to require
-REQUIRED_CONFIRMATIONS=12
-# RPC server url with ws or wss protocol
-BLOCKCHAIN_WS_URL=ws://127.0.0.1:8545 
-# RPC server url with http or https protocol
-BLOCKCHAIN_HTTP_URL=http://127.0.0.1:8545
+  ```sh
+  npx ganache-cli
+  ```
 
-# 12 words mnemonic phrase of the wallet you want to use to pay the executions
-MNEMONIC_PHRASE=confirm fragile hobby...
-# Address of the one shoot scheduler smart contract
-ONE_SHOOT_SCHEDULER_ADDRESS=0x...
+2. Run tests
 
-# [Optional] Cron expression that specifies the frequency of the Scheduler execution. Default: each 5 minutes.
-SCHEDULER_CRON_EXPRESSION=*/5 * * * *
+  ```sh
+  npm test
+  ```
+
+  or watch mode with
+
+  ```sh
+  test:watch
+  ```
+
+Coverage report with:
+
+```sh
+npm run coverage
 ```
 
-### 3. Confirmations and window time
+### Run linter
+
+```sh
+npm run lint
+```
+
+Auto-fix:
+
+```sh
+npm run lint:fix
+```
+
+### Build
+
+```sh
+npm run build
+```
+
+For production:
+
+```sh
+npm run build:prod
+```
+
+## Run the service
+
+1. Run build script
+
+2. Create a `.env` file in the root directory and put the following variables:
+
+    ```dosini
+    # directory and name of the cache database
+    DB_NAME=scheduler.sqlite
+    # number of confirmations you want to require
+    REQUIRED_CONFIRMATIONS=12
+    # RPC server url with ws or wss protocol
+    BLOCKCHAIN_WS_URL=ws://127.0.0.1:8545
+    # RPC server url with http or https protocol
+    BLOCKCHAIN_HTTP_URL=http://127.0.0.1:8545
+
+    # 12 words mnemonic phrase of the wallet you want to use to pay the executions
+    MNEMONIC_PHRASE=confirm fragile hobby...
+    # Address of the one shoot scheduler smart contract
+    ONE_SHOOT_SCHEDULER_ADDRESS=0x...
+
+    # [Optional] Cron expression that specifies the frequency of the Scheduler execution. Default: each 5 minutes.
+    SCHEDULER_CRON_EXPRESSION=*/5 * * * *
+    ```
+
+3. Run
+
+    ```sh
+    npm run start
+    ```
+    
+> See [here](#deployment-with-docker) how to run it with Docker
+
+**About Confirmations and window time**
 
 As a service provider you must to take into account that the execution window is related to the confirmations required, because you must wait until the confirmations are reached to execute the transaction in order to avoid the execution of unconfirmed transactions.
 
 We recommend at least 12 confirmations with a window of 3-5 minutes. This is directly related to the recurrence of the transaction executions, that runs each 5 minutes (Configurable by `SCHEDULER_CRON_EXPRESSION` environment variable).  
 
 You can configure the *required confirmations* with their own environment variable (`REQUIRED_CONFIRMATIONS`) and the window time is set by the `addPlan` method of the `OneShotSchedule` smart contract.
-
-## Test
-
-1. Start ganache
-
-  ```
-  npx ganache-cli
-  ```
-
-2. Run tests
-
-  ```
-  npm test
-  ```
-
-  or watch mode with
-
-  ```
-  test:watch
-  ```
 
 ## Demo
 
@@ -117,9 +175,3 @@ docker run -d --name datadog-agent \
            -v /opt/datadog-agent/run:/opt/datadog-agent/run:rw \
            -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro datadog/agent:latest
   ```
-
-## Lint
-
-```
-npm run lint
-```
