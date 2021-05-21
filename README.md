@@ -127,7 +127,7 @@ You can configure the *required confirmations* with their own environment variab
 
 If you like to run the demo, you'll need the following environment variables in addition to what you already have in your .env file.
 
-```bash
+```dosini
 # Address of the token smart contract
 TOKEN_ADDRESS=0x...
 # Address of the counter smart contract

@@ -78,17 +78,16 @@ export const deployAllContracts = async (
 
 export const getAccounts = async (web3: Web3) => {
   const [
-    requestorAccountAddress,
     serviceProviderAccountAddress,
     payeeAccountAddress,
-    contractAdminAccountAddress
+    requestorAccountAddress
   ] = await web3.eth.getAccounts()
 
   const accounts = {
     requestor: requestorAccountAddress,
     serviceProvider: serviceProviderAccountAddress,
     payee: payeeAccountAddress,
-    contractAdmin: contractAdminAccountAddress
+    contractAdmin: serviceProviderAccountAddress
   }
 
   return accounts

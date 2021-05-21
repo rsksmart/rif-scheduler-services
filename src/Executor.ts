@@ -70,25 +70,20 @@ export class Executor implements IExecutor {
 
   async execute (transaction: IMetatransaction) {
     try {
-      const { id: index } = transaction
+      const { id } = transaction
 
       await this.ensureConfirmations(transaction)
       await this.ensureIsScheduled(transaction)
 
-      const transactionSchedule = new this.web3.eth.Contract(
-          OneShotScheduleData.abi as AbiItem[],
-          this.contractAddress
-      )
-
       const [providerAccountAddress] = await this.web3.eth.getAccounts()
 
-      const executeGas = await transactionSchedule.methods
-        .execute(index)
+      const executeGas = await this.oneShotScheduleContract.methods
+        .execute(id)
         .estimateGas()
 
-      await transactionSchedule.methods
-        .execute(index)
-        .send({ from: providerAccountAddress, gas: executeGas })
+      await this.oneShotScheduleContract.methods
+        .execute(id)
+        .send({ from: providerAccountAddress, gas: executeGas, nonce: id })
     } finally {
       this.hdWalletProvider.engine.stop()
     }

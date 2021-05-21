@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { setupContracts } from './setupContracts'
 import { sendBalanceToProviderAccount } from './sendBalanceToProviderAccount'
-import { addMinutes } from 'date-fns'
+import { addMinutes, addSeconds } from 'date-fns'
 
 export const setupDemo = async ({
   BLOCKCHAIN_HTTP_URL,
@@ -20,6 +20,9 @@ export const setupDemo = async ({
 
   await sendBalanceToProviderAccount(web3, MNEMONIC_PHRASE, BLOCKCHAIN_HTTP_URL)
 
-  // Schedule counter.inc() to be executed within 3 minutes.
-  await setup.scheduleTransaction({ plan: 0, timestamp: addMinutes(new Date(), 3) })
+  // Schedule counter.inc() to be executed within 5 minutes.
+  const firstDate = addMinutes(new Date(), 5)
+  for (let i = 0; i < 3; i++) {
+    await setup.scheduleTransaction({ plan: 0, timestamp: addSeconds(firstDate, i) })
+  }
 }
