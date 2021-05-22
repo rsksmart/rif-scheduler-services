@@ -83,7 +83,7 @@ export class Executor implements IExecutor {
 
       await this.oneShotScheduleContract.methods
         .execute(id)
-        .send({ from: providerAccountAddress, gas: executeGas, nonce: id })
+        .send({ from: providerAccountAddress, gas: executeGas })
     } finally {
       this.hdWalletProvider.engine.stop()
     }
