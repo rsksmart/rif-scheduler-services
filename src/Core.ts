@@ -38,6 +38,8 @@ class Core {
   async start () {
     this.logger.debug('Starting...')
 
+    this.executor.account().then(account => this.logger.debug(`Account: ${account}`))
+
     this.logger.debug('Sync missed/older events')
     const lastBlockNumber = await this.cache.getLastSyncedBlockNumber()
 
@@ -46,6 +48,7 @@ class Core {
     )
 
     for (const event of pastEvents) {
+      this.logger.info('Recovering past event', event)
       await this.cache.save(event)
     }
 
@@ -54,6 +57,7 @@ class Core {
 
     this.logger.debug('Start listening new events')
     await this.listener.listenNewScheduledTransactions(async (event) => {
+      this.logger.info('New scheduled execution', event)
       await this.cache.save(event)
     })
 
@@ -62,6 +66,8 @@ class Core {
       const collectedTx = await this.collector.collectSince(new Date(Date.now()))
 
       for (const transaction of collectedTx) {
+        this.logger.info('Executing: ', transaction)
+
         const error = await this.executor
           .execute(transaction)
           .catch(error => error)

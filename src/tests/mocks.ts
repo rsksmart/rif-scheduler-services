@@ -24,4 +24,8 @@ export class ExecutorMock implements IExecutor {
 
   async stopEngine () {
   }
+
+  async account () {
+    return Promise.resolve('0xmock')
+  }
 }

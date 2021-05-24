@@ -12,6 +12,7 @@ export interface IExecutor {
   execute (transaction: IMetatransaction): Promise<void>
   getCurrentState (id: string): Promise<EMetatransactionState>
   stopEngine (): Promise<void>
+  account (): Promise<string>
 }
 
 export class Executor implements IExecutor {
@@ -68,26 +69,23 @@ export class Executor implements IExecutor {
     }
   }
 
+  account = () => this.web3.eth.getAccounts().then(accounts => accounts[0])
+
   async execute (transaction: IMetatransaction) {
     try {
-      const { id: index } = transaction
+      const { id } = transaction
 
       await this.ensureConfirmations(transaction)
       await this.ensureIsScheduled(transaction)
 
-      const transactionSchedule = new this.web3.eth.Contract(
-          OneShotScheduleData.abi as AbiItem[],
-          this.contractAddress
-      )
-
       const [providerAccountAddress] = await this.web3.eth.getAccounts()
 
-      const executeGas = await transactionSchedule.methods
-        .execute(index)
+      const executeGas = await this.oneShotScheduleContract.methods
+        .execute(id)
         .estimateGas()
 
-      await transactionSchedule.methods
-        .execute(index)
+      await this.oneShotScheduleContract.methods
+        .execute(id)
         .send({ from: providerAccountAddress, gas: executeGas })
     } finally {
       this.hdWalletProvider.engine.stop()
