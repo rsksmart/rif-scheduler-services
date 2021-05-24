@@ -12,6 +12,7 @@ export interface IExecutor {
   execute (transaction: IMetatransaction): Promise<void>
   getCurrentState (id: string): Promise<EMetatransactionState>
   stopEngine (): Promise<void>
+  account (): Promise<string>
 }
 
 export class Executor implements IExecutor {
@@ -67,6 +68,8 @@ export class Executor implements IExecutor {
       throw new Error('State must be Scheduled')
     }
   }
+
+  account = () => this.web3.eth.getAccounts().then(accounts => accounts[0])
 
   async execute (transaction: IMetatransaction) {
     try {

@@ -38,6 +38,8 @@ class Core {
   async start () {
     this.logger.debug('Starting...')
 
+    this.executor.account().then(account => this.logger.debug(`Account: ${account}`))
+
     this.logger.debug('Sync missed/older events')
     const lastBlockNumber = await this.cache.getLastSyncedBlockNumber()
 
