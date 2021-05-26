@@ -7,12 +7,14 @@ import { sendBalanceToProviderAccount } from './sendBalanceToProviderAccount'
 import { BLOCKCHAIN_HTTP_URL, MNEMONIC_PHRASE } from './constants'
 import ERC677Data from '../contracts/ERC677.json'
 import { AbiItem } from 'web3-utils'
+import { BlockchainDate } from '../common/BlockchainDate'
 
 jest.setTimeout(17000)
 
 describe('Executor', function (this: {
   setup: ISetup,
   web3: Web3,
+  blockchainDate: BlockchainDate;
   contracts: {
     tokenAddress: string;
     counterAddress: string;
@@ -29,6 +31,7 @@ describe('Executor', function (this: {
       this.contracts.counterAddress,
       this.contracts.oneShotScheduleAddress
     )
+    this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
     await sendBalanceToProviderAccount(this.web3, MNEMONIC_PHRASE, BLOCKCHAIN_HTTP_URL)
   })
@@ -36,7 +39,8 @@ describe('Executor', function (this: {
   test('Should execute a scheduled tx', async () => {
     const CONFIRMATIONS_REQUIRED = 10
 
-    const timestamp = addMinutes(new Date(), 5)
+    const currentDate = await this.blockchainDate.now()
+    const timestamp = addMinutes(currentDate, 5)
 
     const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp })
 
@@ -56,7 +60,8 @@ describe('Executor', function (this: {
   test('Should throw error when execute a scheduled tx without the confirmations required', async () => {
     const CONFIRMATIONS_REQUIRED = 10
 
-    const timestamp = addMinutes(new Date(), 5)
+    const currentDate = await this.blockchainDate.now()
+    const timestamp = addMinutes(currentDate, 5)
 
     const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp })
 
@@ -75,7 +80,8 @@ describe('Executor', function (this: {
   test('Should throw error when execute a scheduled tx twice', async () => {
     const CONFIRMATIONS_REQUIRED = 1
 
-    const timestamp = addMinutes(new Date(), 5)
+    const currentDate = await this.blockchainDate.now()
+    const timestamp = addMinutes(currentDate, 5)
 
     const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp })
 
@@ -99,7 +105,8 @@ describe('Executor', function (this: {
   test('Should execute a some other contract scheduled', async () => {
     const CONFIRMATIONS_REQUIRED = 1
 
-    const timestamp = addMinutes(new Date(), 5)
+    const currentDate = await this.blockchainDate.now()
+    const timestamp = addMinutes(currentDate, 5)
 
     const accounts = await getAccounts(this.web3)
 

@@ -13,7 +13,8 @@ import Core from '../Core'
 import { Collector } from '../Collector'
 import { EMetatransactionState } from '../common/IMetatransaction'
 import { ExecutorMock, SchedulerMock } from './mocks'
-import mockDate from 'jest-mock-now'
+import { BlockchainDate } from '../common/BlockchainDate'
+import { time } from '@openzeppelin/test-helpers'
 
 jest.setTimeout(27000)
 
@@ -26,6 +27,7 @@ describe('Core', function (this: {
   web3: Web3;
   setup: ISetup;
   core: Core;
+  blockchainDate: BlockchainDate;
   executorExecuteSpied: any;
   collectorCollectSinceSpied: any;
   schedulerStartSpied: any
@@ -58,8 +60,9 @@ describe('Core', function (this: {
     const executor = new ExecutorMock()
     const collector = new Collector(this.repository)
     const scheduler = new SchedulerMock()
+    this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
-    this.core = new Core(recoverer, listener, this.cache, collector, executor, scheduler)
+    this.core = new Core(recoverer, listener, this.cache, collector, executor, scheduler, this.blockchainDate)
 
     this.executorExecuteSpied = jest.spyOn(executor, 'execute')
     this.collectorCollectSinceSpied = jest.spyOn(collector, 'collectSince')
@@ -69,8 +72,9 @@ describe('Core', function (this: {
   // TODO: if we stop the service then fails to reconnect
   // for now it's not possible to stop it because it hangs out
   test('Should sync transactions after a restart', async () => {
+    const currentDate = await this.blockchainDate.now()
     for (let i = 0; i < 4; i++) {
-      const timestamp1 = addMinutes(new Date(), 15 + i)
+      const timestamp1 = addMinutes(currentDate, 15 + i)
       await this.setup.scheduleTransaction({ plan: 0, timestamp: timestamp1 })
     }
 
@@ -90,8 +94,9 @@ describe('Core', function (this: {
   test('Should cache new scheduled transactions', async () => {
     await this.core.start()
 
+    const currentDate = await this.blockchainDate.now()
     for (let i = 0; i < 2; i++) {
-      const timestamp = addMinutes(new Date(), 15 + i)
+      const timestamp = addMinutes(currentDate, 15 + i)
       await this.setup.scheduleTransaction({ plan: 0, timestamp })
     }
 
@@ -110,10 +115,12 @@ describe('Core', function (this: {
   test('Should collect and execute cached tx`s', async () => {
     const DIFF_IN_MINUTES = 15
 
-    const timestampFuture = addMinutes(new Date(), DIFF_IN_MINUTES)
-    mockDate(timestampFuture)
+    const currentDate = await this.blockchainDate.now()
+    const timestampFuture = addMinutes(currentDate, DIFF_IN_MINUTES)
 
     const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp: timestampFuture })
+
+    await time.increase(DIFF_IN_MINUTES * 60)
 
     await this.core.start()
 
@@ -130,8 +137,5 @@ describe('Core', function (this: {
     expect(this.executorExecuteSpied).toBeCalledWith(transaction)
     expect(cachedTx).toBeDefined()
     expect(cachedTx?.state).toBe(EMetatransactionState.ExecutionSuccessful)
-
-    const dateMocked = Date.now as any
-    dateMocked.mockRestore()
   })
 })

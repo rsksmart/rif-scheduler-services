@@ -8,6 +8,7 @@ import { Collector } from './Collector'
 import { Scheduler } from './Scheduler'
 import { Executor } from './Executor'
 import Core from './Core'
+import { BlockchainDate } from './common/BlockchainDate'
 require('dotenv').config()
 
 const environment = {
@@ -38,8 +39,9 @@ const createCoreInstance = async () => {
   )
   const collector = new Collector(repository)
   const scheduler = new Scheduler(environment.SCHEDULER_CRON_EXPRESSION)
+  const blockchainDate = new BlockchainDate(environment.BLOCKCHAIN_HTTP_URL)
 
-  return new Core(recoverer, listener, cache, collector, executor, scheduler)
+  return new Core(recoverer, listener, cache, collector, executor, scheduler, blockchainDate)
 }
 
 const init = async () => {

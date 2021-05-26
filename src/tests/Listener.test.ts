@@ -3,15 +3,19 @@ import { Listener, newScheduledTransactionsError } from '../Listener'
 import { addMinutes } from 'date-fns'
 import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL, BLOCKCHAIN_WS_URL } from './constants'
+import { BlockchainDate } from '../common/BlockchainDate'
 
 jest.setTimeout(17000)
 
 describe('Listener', function (this: {
   setup: ISetup,
-  web3: Web3
+  web3: Web3,
+  blockchainDate: BlockchainDate;
 }) {
   beforeEach(async () => {
     this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
+
+    this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
     const contracts = await deployAllContracts(this.web3)
     this.setup = await setupContracts(
@@ -35,7 +39,8 @@ describe('Listener', function (this: {
       done()
     })
 
-    const timestamp = addMinutes(new Date(), 15)
+    const currentDate = await this.blockchainDate.now()
+    const timestamp = addMinutes(currentDate, 15)
 
     await this.setup.scheduleTransaction({ plan: 0, timestamp })
   })
@@ -56,7 +61,8 @@ describe('Listener', function (this: {
 
     await listener.disconnect()
 
-    const timestamp = addMinutes(new Date(), 15)
+    const currentDate = await this.blockchainDate.now()
+    const timestamp = addMinutes(currentDate, 15)
 
     await this.setup.scheduleTransaction({ plan: 0, timestamp })
   })
