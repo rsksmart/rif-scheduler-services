@@ -122,8 +122,8 @@ export const setupContracts = async (
   web3.eth.defaultAccount = accounts.contractAdmin
 
   const plans = [
-    { price: toBN(4), window: toBN(300) },
-    { price: toBN(15), window: toBN(10000) }
+    { price: toBN(15), window: toBN(10000) },
+    { price: toBN(4), window: toBN(300) }
   ]
 
   const tokenTransferGas = await token.methods

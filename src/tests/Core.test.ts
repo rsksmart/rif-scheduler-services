@@ -121,6 +121,7 @@ describe('Core', function (this: {
     const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp: timestampFuture })
 
     await time.increase(DIFF_IN_MINUTES * 60)
+    await time.advanceBlock()
 
     await this.core.start()
 
