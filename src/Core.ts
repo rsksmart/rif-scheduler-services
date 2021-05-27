@@ -6,32 +6,20 @@ import { Collector } from './Collector'
 import { Tracer } from 'tracer'
 import { IScheduler } from './Scheduler'
 import { IExecutor } from './Executor'
+import { BlockchainDate } from './common/BlockchainDate'
 
 class Core {
-  private cache: Cache;
-  private recoverer: Recoverer
-  private listener: Listener
-  private collector: Collector
-  private executor: IExecutor
-  private scheduler: IScheduler
   private logger: Tracer.Logger
 
   constructor (
-    recoverer: Recoverer,
-    listener: Listener,
-    cache: Cache,
-    collector: Collector,
-    executor: IExecutor,
-    scheduler: IScheduler
+    private recoverer: Recoverer,
+    private listener: Listener,
+    private cache: Cache,
+    private collector: Collector,
+    private executor: IExecutor,
+    private scheduler: IScheduler,
+    private blockchainDate: BlockchainDate
   ) {
-    this.cache = cache
-    this.recoverer = recoverer
-    this.listener = listener
-
-    this.collector = collector
-    this.executor = executor
-    this.scheduler = scheduler
-
     this.logger = loggerFactory()
   }
 
@@ -63,7 +51,8 @@ class Core {
 
     this.logger.debug('Start scheduler')
     await this.scheduler.start(async () => {
-      const collectedTx = await this.collector.collectSince(new Date(Date.now()))
+      const currentDate = await this.blockchainDate.now()
+      const collectedTx = await this.collector.collectSince(currentDate)
 
       for (const transaction of collectedTx) {
         this.logger.info('Executing: ', transaction)

@@ -78,7 +78,7 @@ export class Executor implements IExecutor {
       await this.ensureConfirmations(transaction)
       await this.ensureIsScheduled(transaction)
 
-      const [providerAccountAddress] = await this.web3.eth.getAccounts()
+      const providerAccountAddress = await this.account()
 
       const executeGas = await this.oneShotScheduleContract.methods
         .execute(id)
