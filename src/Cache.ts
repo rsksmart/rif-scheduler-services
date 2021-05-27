@@ -30,9 +30,9 @@ export class Cache {
 
   async getLastSyncedBlockNumber (): Promise<number | undefined> {
     const result = await this.repository
-      .createQueryBuilder()
-      .orderBy('blockNumber', 'DESC')
-      .getOne()
+      .findOne({
+        order: { blockNumber: 'DESC' }
+      })
 
     return result?.blockNumber
   }

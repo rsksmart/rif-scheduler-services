@@ -7,7 +7,7 @@ export const createDbConnection = (database: string) =>
     database,
     entities: Entities,
     logging: false,
-    dropSchema: true,
+    dropSchema: false,
     synchronize: true,
     name: database
   })
