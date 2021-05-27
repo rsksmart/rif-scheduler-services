@@ -175,3 +175,15 @@ docker run -d --name datadog-agent \
            -v /opt/datadog-agent/run:/opt/datadog-agent/run:rw \
            -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro datadog/agent:latest
   ```
+
+## Known Issues
+
+This section outlines acknowledged issues, including workarounds if known.
+
+* [ [#3](https://github.com/rsksmart/rif-scheduler-services/issues/3) ] 
+
+  **If the service is stopped using the stop method of Core component it couldn't be restarted:**
+
+  This issue is related to Web3 and WebSockets, until now the only solutions is to kill the process and start it again.
+
+  Alternatively you could use a tool such as [PM2](https://www.npmjs.com/package/pm2)
