@@ -5,9 +5,10 @@ WORKDIR /app
 COPY package.json ./
 COPY package-lock.json ./
 
-RUN npm i
-
 COPY ./src ./src
 COPY ./tsconfig.json ./
 
-CMD [ "npm", "run", "start:prod"]
+RUN npm i
+RUN npm run build:prod
+
+CMD ["npm", "run", "start:prod"]

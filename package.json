@@ -2,12 +2,11 @@
   "name": "rif-scheduler-services",
   "version": "1.0.0",
   "description": "RIF Scheduler services",
-  "main": "lib/service/index.js",
-  "types": "lib",
+  "main": "lib/index.js",
   "scripts": {
     "start": "nodemon",
     "postinstall": "npx typechain \"src/contracts/*.json\" --target=web3-v1 --out-dir src/contracts/types",
-    "start:prod": "npm run build:prod && node lib/index.js",
+    "start:prod": "node lib/index.js",
     "demo": "nodemon --demo",
     "ganache": "npx ganache-cli",
     "test": "npx jest src/*/* --verbose --coverage --runInBand",
@@ -65,6 +64,7 @@
     "rimraf": "^3.0.2",
     "ts-jest": "^26.5.4",
     "ts-node": "^9.1.1",
+    "tsc": "^2.0.3",
     "typechain": "^5.0.0",
     "typescript": "^4.2.4"
   }
