@@ -28,11 +28,12 @@ class Core {
 
     this.executor.account().then(account => this.logger.debug(`Account: ${account}`))
 
-    this.logger.debug('Sync missed/older events')
-    const lastBlockNumber = await this.cache.getLastSyncedBlockNumber()
+    const lastSyncedBlockNumber = await this.cache.getLastSyncedBlockNumber()
+    this.logger.debug(`Last synced block number: ${lastSyncedBlockNumber}`)
 
+    this.logger.debug('Sync missed/older events')
     const pastEvents = await this.recoverer.recoverScheduledTransactions(
-      lastBlockNumber
+      lastSyncedBlockNumber
     )
 
     for (const event of pastEvents) {

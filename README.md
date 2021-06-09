@@ -21,6 +21,7 @@
 </p>
 
 RIF Scheduler services are used by service providers willing to offer scheduling services. Run this service to:
+
 - Collect the transactions that need execution
 - Execute the transactions in proper time and collect reward
 
@@ -36,27 +37,27 @@ npm i
 
 1. Start ganache
 
-  ```sh
-  npx ganache-cli
-  ```
+    ```sh
+    npx ganache-cli
+    ```
 
 2. Run tests
 
-  ```sh
-  npm test
-  ```
+    ```sh
+    npm test
+    ```
 
-  or watch mode with
+    or watch mode with
 
-  ```sh
-  test:watch
-  ```
+    ```sh
+    npm run test:watch
+    ```
 
-Coverage report with:
+3. Run coverage report:
 
-```sh
-npm run coverage
-```
+    ```sh
+    npm run coverage
+    ```
 
 ### Run linter
 
@@ -100,8 +101,8 @@ npm run build:prod
 
     # 12 words mnemonic phrase of the wallet you want to use to pay the executions
     MNEMONIC_PHRASE=confirm fragile hobby...
-    # Address of the one shoot scheduler smart contract
-    ONE_SHOOT_SCHEDULER_ADDRESS=0x...
+    # Address of the one shot scheduler smart contract
+    ONE_SHOT_SCHEDULER_ADDRESS=0x...
 
     # [Optional] Cron expression that specifies the frequency of the Scheduler execution. Default: each 5 minutes.
     SCHEDULER_CRON_EXPRESSION=*/5 * * * *
@@ -112,10 +113,10 @@ npm run build:prod
     ```sh
     npm run start
     ```
-    
+
 > See [here](#deployment-with-docker) how to run it with Docker
 
-**About Confirmations and window time**
+#### About Confirmations and window time
 
 As a service provider you must to take into account that the execution window is related to the confirmations required, because you must wait until the confirmations are reached to execute the transaction in order to avoid the execution of unconfirmed transactions.
 
@@ -137,17 +138,18 @@ COUNTER_ADDRESS=0x...
 The `TOKEN_ADDRESS` is the address of the `ERC677` smart contract needed to approve the gas that will be consumed by the transactions executions and the `COUNTER_ADDRESS` is the address of the `Counter` smart contract that have a method called `inc()` useful to illustrate the execution of some smart contract.
 
 Then:
+
 1. Start ganache
 
-  ```
-  npx ganache-cli
-  ```
+    ```sh
+    npx ganache-cli
+    ```
 
 2. Run demo
 
-  ```
-  npm run demo
-  ```
+    ```sh
+    npm run demo
+    ```
 
 ## Deployment with docker
 
@@ -155,32 +157,32 @@ Then:
 
 2. From the root of the project execute the following commands:
 
-  ```
-  docker-compose build
-  docker-compose up -d
-  ```
+    ```sh
+    docker-compose build
+    docker-compose up -d
+    ```
 
 3. *[Optional]* Monitoring with [Datadog](https://www.datadoghq.com/):
 
-Execute the following command (don't forget to replace `YOUR_DD_API_KEY` with your api key from Datadog):
+    Execute the following command (don't forget to replace `YOUR_DD_API_KEY` with your api key from Datadog):
 
-  ```
-docker run -d --name datadog-agent \
-           -e DD_API_KEY=YOUR_DD_API_KEY \
-           -e DD_LOGS_ENABLED=true \
-           -e DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true \
-           -e DD_CONTAINER_EXCLUDE_LOGS="name:datadog-agent" \
-           -v /var/run/docker.sock:/var/run/docker.sock:ro \
-           -v /proc/:/host/proc/:ro \
-           -v /opt/datadog-agent/run:/opt/datadog-agent/run:rw \
-           -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro datadog/agent:latest
-  ```
+    ```sh
+    docker run -d --name datadog-agent \
+              -e DD_API_KEY=YOUR_DD_API_KEY \
+              -e DD_LOGS_ENABLED=true \
+              -e DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true \
+              -e DD_CONTAINER_EXCLUDE_LOGS="name:datadog-agent" \
+              -v /var/run/docker.sock:/var/run/docker.sock:ro \
+              -v /proc/:/host/proc/:ro \
+              -v /opt/datadog-agent/run:/opt/datadog-agent/run:rw \
+              -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro datadog/agent:latest
+    ```
 
 ## Known Issues
 
 This section outlines acknowledged issues, including workarounds if known.
 
-* [ [#3](https://github.com/rsksmart/rif-scheduler-services/issues/3) ] 
+- [ [#3](https://github.com/rsksmart/rif-scheduler-services/issues/3) ]
 
   **If the service is stopped using the stop method of Core component it couldn't be restarted:**
 

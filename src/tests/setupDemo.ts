@@ -8,7 +8,7 @@ export const setupDemo = async ({
   BLOCKCHAIN_HTTP_URL,
   TOKEN_ADDRESS,
   COUNTER_ADDRESS,
-  ONE_SHOOT_SCHEDULER_ADDRESS,
+  ONE_SHOT_SCHEDULER_ADDRESS,
   MNEMONIC_PHRASE
 }) => {
   const web3 = new Web3(BLOCKCHAIN_HTTP_URL)
@@ -16,7 +16,7 @@ export const setupDemo = async ({
     web3,
     TOKEN_ADDRESS,
     COUNTER_ADDRESS,
-    ONE_SHOOT_SCHEDULER_ADDRESS
+    ONE_SHOT_SCHEDULER_ADDRESS
   )
 
   await sendBalanceToProviderAccount(web3, MNEMONIC_PHRASE, BLOCKCHAIN_HTTP_URL)

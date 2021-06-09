@@ -11,34 +11,51 @@ import parseBlockchainTimestamp from './common/parseBlockchainTimestamp'
  */
 export class Recoverer {
   private contract: OneShotSchedule;
+  private web3: Web3;
 
-  constructor (rpcUrl: string, contractAddress: string) {
-    const web3 = new Web3(rpcUrl)
+  constructor (rpcUrl: string, contractAddress: string, private startFromBlockNumber: number, private blocksChunkSize: number) {
+    this.web3 = new Web3(rpcUrl)
 
-    this.contract = (new web3.eth.Contract(
+    this.contract = (new this.web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
       contractAddress
     ) as any) as OneShotSchedule
   }
 
   async recoverScheduledTransactions (
-    fromBlock: number = 0
+    lastBlockNumber?: number
   ): Promise<IMetatransaction[]> {
+    const lastBlockNumberOrDefault = lastBlockNumber || this.startFromBlockNumber
+
     // TODO: find a better way to get the event name, meanwhile, if the event change we has to change the string
     const eventName: ExecutionRequested | string = 'ExecutionRequested'
 
-    const pastEvents = await this.contract.getPastEvents(
-      eventName,
-      {
-        fromBlock,
-        toBlock: 'latest'
-      }
-    )
+    let currentBlockNumber = await this.web3.eth.getBlockNumber()
 
-    return pastEvents.map<IMetatransaction>((event) => ({
-      blockNumber: event.blockNumber,
-      id: event.returnValues.id,
-      timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
-    }))
+    const accumulator: IMetatransaction[] = []
+
+    for (let index = lastBlockNumberOrDefault; index < currentBlockNumber; index += this.blocksChunkSize) {
+      const pastEvents = await this.contract.getPastEvents(
+        eventName,
+        {
+          fromBlock: index,
+          toBlock: index + this.blocksChunkSize
+        }
+      )
+
+      pastEvents.forEach(event => {
+        if (!accumulator.find(x => x.id === event.returnValues.id)) {
+          accumulator.push({
+            blockNumber: event.blockNumber,
+            id: event.returnValues.id,
+            timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
+          })
+        }
+      })
+
+      currentBlockNumber = await this.web3.eth.getBlockNumber()
+    }
+
+    return accumulator
   }
 }

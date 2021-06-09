@@ -16,7 +16,7 @@ import { ExecutorMock, SchedulerMock } from './mocks'
 import { BlockchainDate } from '../common/BlockchainDate'
 import { time } from '@openzeppelin/test-helpers'
 
-jest.setTimeout(27000)
+jest.setTimeout(32000)
 
 const DB_NAME = 'test_db_core'
 
@@ -56,7 +56,7 @@ describe('Core', function (this: {
 
     this.cache = new Cache(this.repository)
     const listener = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotSchedule.options.address)
-    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address)
+    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address, 0, 10)
     const executor = new ExecutorMock()
     const collector = new Collector(this.repository)
     const scheduler = new SchedulerMock()
