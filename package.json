@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon",
     "types": "npx typechain \"src/contracts/*.json\" --target=web3-v1 --out-dir src/contracts/types",
-    "start:prod": "npm run build:prod && node lib/index.js",
+    "start:prod": "node lib/index.js",
     "demo": "nodemon --demo",
     "ganache": "npx ganache-cli",
     "test": "npx jest src/*/* --verbose --coverage --runInBand",
