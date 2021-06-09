@@ -6,6 +6,7 @@ COPY package.json ./
 COPY package-lock.json ./
 
 RUN npm i
+RUN npm run types
 
 COPY ./src ./src
 COPY ./tsconfig.json ./
