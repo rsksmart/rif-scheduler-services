@@ -33,7 +33,8 @@ class Core {
 
     this.logger.debug('Sync missed/older events')
     const pastEvents = await this.recoverer.recoverScheduledTransactions(
-      lastSyncedBlockNumber
+      lastSyncedBlockNumber,
+      (index, current) => this.logger.debug(`Recovering: ${index} / ${current}`)
     )
 
     for (const event of pastEvents) {

@@ -23,7 +23,8 @@ export class Recoverer {
   }
 
   async recoverScheduledTransactions (
-    lastBlockNumber?: number
+    lastBlockNumber?: number,
+    onProgress?: (index: number, current: number) => void
   ): Promise<IMetatransaction[]> {
     const lastBlockNumberOrDefault = lastBlockNumber || this.startFromBlockNumber
 
@@ -35,6 +36,10 @@ export class Recoverer {
     const accumulator: IMetatransaction[] = []
 
     for (let index = lastBlockNumberOrDefault; index < currentBlockNumber; index += this.blocksChunkSize) {
+      if (onProgress) {
+        onProgress(index, currentBlockNumber)
+      }
+
       const pastEvents = await this.contract.getPastEvents(
         eventName,
         {
