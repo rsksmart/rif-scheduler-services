@@ -37,7 +37,7 @@ export class Listener extends EventEmitter {
     invoke: (eventValues: IMetatransaction) => Promise<void>
   ) {
     this.contract.events.ExecutionRequested(
-      {},
+      { fromBlock: 'latest' },
       async (error, event) => {
         if (error) return this.emit(newScheduledTransactionsError, error)
 

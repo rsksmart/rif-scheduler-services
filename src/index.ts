@@ -48,7 +48,10 @@ const createCoreInstance = async () => {
   const scheduler = new Scheduler(environment.SCHEDULER_CRON_EXPRESSION)
   const blockchainDate = new BlockchainDate(environment.BLOCKCHAIN_HTTP_URL)
 
-  return new Core(recoverer, listener, cache, collector, executor, scheduler, blockchainDate)
+  return new Core(recoverer, listener, cache, collector, executor, scheduler, blockchainDate, {
+    startFromBlockNumber: environment.ONE_SHOT_SCHEDULER_START_FROM_BLOCK_NUMBER,
+    blocksChunkSize: environment.ONE_SHOT_SCHEDULER_BLOCKS_CHUNK_SIZE
+  })
 }
 
 const init = async () => {

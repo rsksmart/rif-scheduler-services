@@ -22,6 +22,10 @@ export class Recoverer {
     ) as any) as OneShotSchedule
   }
 
+  async getCurrentBlockNumber () {
+    return this.web3.eth.getBlockNumber()
+  }
+
   async recoverScheduledTransactionsByChunks (fromBlock: number, toBlock: number): Promise<IMetatransaction[]> {
     // TODO: find a better way to get the event name, meanwhile, if the event change we has to change the string
     const eventName: ExecutionRequested | string = 'ExecutionRequested'

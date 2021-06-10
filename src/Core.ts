@@ -18,7 +18,8 @@ class Core {
     private collector: Collector,
     private executor: IExecutor,
     private scheduler: IScheduler,
-    private blockchainDate: BlockchainDate
+    private blockchainDate: BlockchainDate,
+    private config: { startFromBlockNumber: number, blocksChunkSize: number }
   ) {
     this.logger = loggerFactory()
   }
@@ -32,14 +33,20 @@ class Core {
     this.logger.debug(`Last synced block number: ${lastSyncedBlockNumber}`)
 
     this.logger.debug('Sync missed/older events')
-    const pastEvents = await this.recoverer.recoverScheduledTransactions(
-      lastSyncedBlockNumber,
-      (index, current) => this.logger.debug(`Recovering: ${index} / ${current}`)
-    )
+    const lastBlockNumberOrDefault = lastSyncedBlockNumber || this.config.startFromBlockNumber
+    let currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
 
-    for (const event of pastEvents) {
-      this.logger.info('Recovering past event', event)
-      await this.cache.save(event)
+    for (let index = lastBlockNumberOrDefault; index < currentBlockNumber; index += this.config.blocksChunkSize) {
+      this.logger.debug(`Recovering: ${index} / ${currentBlockNumber}`)
+
+      const pastEvents = await this.recoverer.recoverScheduledTransactionsByChunks(index, index + this.config.blocksChunkSize)
+
+      for (const event of pastEvents) {
+        this.logger.info('Recovering past event', event)
+        await this.cache.save(event)
+      }
+
+      currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
     }
 
     this.listener.on(newScheduledTransactionsError, this.logger.error)

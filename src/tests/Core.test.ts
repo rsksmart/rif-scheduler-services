@@ -62,7 +62,7 @@ describe('Core', function (this: {
     const scheduler = new SchedulerMock()
     this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
-    this.core = new Core(recoverer, listener, this.cache, collector, executor, scheduler, this.blockchainDate)
+    this.core = new Core(recoverer, listener, this.cache, collector, executor, scheduler, this.blockchainDate, { startFromBlockNumber: 0, blocksChunkSize: 1000 })
 
     this.executorExecuteSpied = jest.spyOn(executor, 'execute')
     this.collectorCollectSinceSpied = jest.spyOn(collector, 'collectSince')
