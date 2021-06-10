@@ -22,6 +22,25 @@ export class Recoverer {
     ) as any) as OneShotSchedule
   }
 
+  async recoverScheduledTransactionsByChunks (fromBlock: number, toBlock: number): Promise<IMetatransaction[]> {
+    // TODO: find a better way to get the event name, meanwhile, if the event change we has to change the string
+    const eventName: ExecutionRequested | string = 'ExecutionRequested'
+
+    const pastEvents = await this.contract.getPastEvents(
+      eventName,
+      {
+        fromBlock,
+        toBlock: toBlock - 1
+      }
+    )
+
+    return pastEvents.map(event => ({
+      blockNumber: event.blockNumber,
+      id: event.returnValues.id,
+      timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
+    }))
+  }
+
   async recoverScheduledTransactions (
     lastBlockNumber?: number,
     onProgress?: (index: number, current: number) => void
@@ -44,18 +63,16 @@ export class Recoverer {
         eventName,
         {
           fromBlock: index,
-          toBlock: index + this.blocksChunkSize
+          toBlock: index + this.blocksChunkSize - 1
         }
       )
 
       pastEvents.forEach(event => {
-        if (!accumulator.find(x => x.id === event.returnValues.id)) {
-          accumulator.push({
-            blockNumber: event.blockNumber,
-            id: event.returnValues.id,
-            timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
-          })
-        }
+        accumulator.push({
+          blockNumber: event.blockNumber,
+          id: event.returnValues.id,
+          timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
+        })
       })
 
       currentBlockNumber = await this.web3.eth.getBlockNumber()

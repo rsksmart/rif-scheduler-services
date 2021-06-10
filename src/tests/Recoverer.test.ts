@@ -29,6 +29,7 @@ describe('Recoverer', function (this: {
   test.only('Should get all past scheduled tx events', async () => {
     const NUMBER_OF_SCHEDULED_TX = 25
     const currentDate = await this.blockchainDate.now()
+    const fromBlockNumber = await this.web3.eth.getBlockNumber()
 
     for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
       const timestamp = addMinutes(currentDate, 15 + i)
@@ -37,7 +38,9 @@ describe('Recoverer', function (this: {
 
     const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address, 0, 10)
 
-    const result = await recoverer.recoverScheduledTransactions()
+    const toBlockNumber = await this.web3.eth.getBlockNumber() + 1
+
+    const result = await recoverer.recoverScheduledTransactionsByChunks(fromBlockNumber, toBlockNumber)
 
     expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
 
