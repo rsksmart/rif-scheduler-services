@@ -4,7 +4,6 @@ version: "3"
 services:
     rif-scheduler-services:
         image: rif-scheduler-services
-        user: "node"
         build:
             context: .
             dockerfile: Dockerfile
