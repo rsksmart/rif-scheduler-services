@@ -31,6 +31,7 @@ Install dependencies:
 
 ```sh
 npm i
+npm run types
 ```
 
 ### Run unit tests
@@ -103,6 +104,10 @@ npm run build:prod
     MNEMONIC_PHRASE=confirm fragile hobby...
     # Address of the one shot scheduler smart contract
     ONE_SHOT_SCHEDULER_ADDRESS=0x...
+    # Block number that indicates from where starting the recovering, usually it will be block number where was deployed the one shot scheduler smart contract
+    ONE_SHOT_SCHEDULER_START_FROM_BLOCK_NUMBER=0
+    # Number of blocks that represent a chunk, needed to paginate the recovering process
+    ONE_SHOT_SCHEDULER_BLOCKS_CHUNK_SIZE=10000
 
     # [Optional] Cron expression that specifies the frequency of the Scheduler execution. Default: each 5 minutes.
     SCHEDULER_CRON_EXPRESSION=*/5 * * * *
