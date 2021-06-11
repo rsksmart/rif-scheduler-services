@@ -39,7 +39,7 @@ class Core {
     for (let index = lastBlockNumberOrDefault; index < currentBlockNumber; index += this.config.blocksChunkSize) {
       this.logger.debug(`Recovering: ${index} / ${currentBlockNumber}`)
 
-      const pastEvents = await this.recoverer.recoverScheduledTransactionsByChunks(index, index + this.config.blocksChunkSize)
+      const pastEvents = await this.recoverer.recoverScheduledTransactions(index, index + this.config.blocksChunkSize)
 
       for (const event of pastEvents) {
         this.logger.info('Recovering past event', event)

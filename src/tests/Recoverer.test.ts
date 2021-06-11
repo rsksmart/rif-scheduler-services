@@ -40,7 +40,7 @@ describe('Recoverer', function (this: {
 
     const toBlockNumber = await this.web3.eth.getBlockNumber() + 1
 
-    const result = await recoverer.recoverScheduledTransactionsByChunks(fromBlockNumber, toBlockNumber)
+    const result = await recoverer.recoverScheduledTransactions(fromBlockNumber, toBlockNumber)
 
     expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
 

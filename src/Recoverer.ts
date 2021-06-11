@@ -26,7 +26,7 @@ export class Recoverer {
     return this.web3.eth.getBlockNumber()
   }
 
-  async recoverScheduledTransactionsByChunks (fromBlock: number, toBlock: number): Promise<IMetatransaction[]> {
+  async recoverScheduledTransactions (fromBlock: number, toBlock: number): Promise<IMetatransaction[]> {
     // TODO: find a better way to get the event name, meanwhile, if the event change we has to change the string
     const eventName: ExecutionRequested | string = 'ExecutionRequested'
 
@@ -43,45 +43,5 @@ export class Recoverer {
       id: event.returnValues.id,
       timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
     }))
-  }
-
-  async recoverScheduledTransactions (
-    lastBlockNumber?: number,
-    onProgress?: (index: number, current: number) => void
-  ): Promise<IMetatransaction[]> {
-    const lastBlockNumberOrDefault = lastBlockNumber || this.startFromBlockNumber
-
-    // TODO: find a better way to get the event name, meanwhile, if the event change we has to change the string
-    const eventName: ExecutionRequested | string = 'ExecutionRequested'
-
-    let currentBlockNumber = await this.web3.eth.getBlockNumber()
-
-    const accumulator: IMetatransaction[] = []
-
-    for (let index = lastBlockNumberOrDefault; index < currentBlockNumber; index += this.blocksChunkSize) {
-      if (onProgress) {
-        onProgress(index, currentBlockNumber)
-      }
-
-      const pastEvents = await this.contract.getPastEvents(
-        eventName,
-        {
-          fromBlock: index,
-          toBlock: index + this.blocksChunkSize - 1
-        }
-      )
-
-      pastEvents.forEach(event => {
-        accumulator.push({
-          blockNumber: event.blockNumber,
-          id: event.returnValues.id,
-          timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
-        })
-      })
-
-      currentBlockNumber = await this.web3.eth.getBlockNumber()
-    }
-
-    return accumulator
   }
 }
