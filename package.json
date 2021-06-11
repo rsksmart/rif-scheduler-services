@@ -12,7 +12,7 @@
     "test": "npx jest src/*/* --verbose --coverage --runInBand",
     "test:ci": "npx jest src/*/* --coverage --ci --runInBand",
     "test:watch": "npx jest src/*/* --verbose --coverage --watch --runInBand",
-    "build": "rimraf ./lib && tsc",
+    "build": "rimraf ./lib && npx tsc",
     "build:prod": "rimraf ./lib && tsc -p tsconfig.json",
     "lint": "npx eslint ./src --ext .json,.js,.ts",
     "lint:fix": "npx eslint ./src --ext .json,.js,.ts --fix"

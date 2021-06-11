@@ -1,7 +1,7 @@
 
 import { LocalStorage } from 'node-localstorage'
 
-class KeyValueStore {
+class Store {
     private localStorage: LocalStorage
 
     constructor (directory: string = 'storage/values') {
@@ -23,4 +23,4 @@ class KeyValueStore {
     }
 }
 
-export default KeyValueStore
+export default Store

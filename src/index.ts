@@ -9,7 +9,7 @@ import { Scheduler } from './Scheduler'
 import { Executor } from './Executor'
 import Core from './Core'
 import { BlockchainDate } from './common/BlockchainDate'
-import KeyValueStore from './common/keyValueStore'
+import Store from './common/Store'
 require('dotenv').config()
 
 const environment = {
@@ -49,7 +49,7 @@ const createCoreInstance = async () => {
   const scheduler = new Scheduler(environment.SCHEDULER_CRON_EXPRESSION)
   const blockchainDate = new BlockchainDate(environment.BLOCKCHAIN_HTTP_URL)
 
-  return new Core(recoverer, listener, cache, collector, executor, scheduler, blockchainDate, new KeyValueStore(), {
+  return new Core(recoverer, listener, cache, collector, executor, scheduler, blockchainDate, new Store(), {
     startFromBlockNumber: environment.ONE_SHOT_SCHEDULER_START_FROM_BLOCK_NUMBER,
     blocksChunkSize: environment.ONE_SHOT_SCHEDULER_BLOCKS_CHUNK_SIZE
   })

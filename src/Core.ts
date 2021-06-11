@@ -7,7 +7,7 @@ import { Tracer } from 'tracer'
 import { IScheduler } from './Scheduler'
 import { IExecutor } from './Executor'
 import { BlockchainDate } from './common/BlockchainDate'
-import KeyValueStore from './common/keyValueStore'
+import Store from './common/Store'
 
 class Core {
   private logger: Tracer.Logger
@@ -20,7 +20,7 @@ class Core {
     private executor: IExecutor,
     private scheduler: IScheduler,
     private blockchainDate: BlockchainDate,
-    private keyValueStore: KeyValueStore,
+    private keyValueStore: Store,
     private config: { startFromBlockNumber: number, blocksChunkSize: number }
   ) {
     this.logger = loggerFactory()
