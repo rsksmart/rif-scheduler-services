@@ -7,6 +7,7 @@ import { Tracer } from 'tracer'
 import { IScheduler } from './Scheduler'
 import { IExecutor } from './Executor'
 import { BlockchainDate } from './common/BlockchainDate'
+import store from './common/store'
 
 class Core {
   private logger: Tracer.Logger
@@ -29,7 +30,7 @@ class Core {
 
     this.executor.account().then(account => this.logger.debug(`Account: ${account}`))
 
-    const lastSyncedBlockNumber = await this.cache.getLastSyncedBlockNumber()
+    const lastSyncedBlockNumber = store.get('lastSyncedBlockNumber') || (await this.cache.getLastSyncedBlockNumber())
     this.logger.debug(`Last synced block number: ${lastSyncedBlockNumber}`)
 
     this.logger.debug('Sync missed/older events')
@@ -46,6 +47,7 @@ class Core {
         await this.cache.save(event)
       }
 
+      store.set('lastSyncedBlockNumber', index)
       currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
     }
 
