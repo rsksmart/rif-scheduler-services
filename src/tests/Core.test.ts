@@ -15,6 +15,7 @@ import { EMetatransactionState } from '../common/IMetatransaction'
 import { ExecutorMock, SchedulerMock } from './mocks'
 import { BlockchainDate } from '../common/BlockchainDate'
 import { time } from '@openzeppelin/test-helpers'
+import KeyValueStore from '../common/keyValueStore'
 
 jest.setTimeout(32000)
 
@@ -38,6 +39,7 @@ describe('Core', function (this: {
       await deleteDatabase(this.dbConnection, DB_NAME)
     }
     jest.clearAllMocks()
+    new KeyValueStore().clearAll()
   })
   beforeEach(async () => {
     this.dbConnection = await createDbConnection(DB_NAME)
@@ -62,7 +64,17 @@ describe('Core', function (this: {
     const scheduler = new SchedulerMock()
     this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
-    this.core = new Core(recoverer, listener, this.cache, collector, executor, scheduler, this.blockchainDate, { startFromBlockNumber: 0, blocksChunkSize: 1000 })
+    this.core = new Core(
+      recoverer,
+      listener,
+      this.cache,
+      collector,
+      executor,
+      scheduler,
+      this.blockchainDate,
+      new KeyValueStore(),
+      { startFromBlockNumber: 0, blocksChunkSize: 1000 }
+    )
 
     this.executorExecuteSpied = jest.spyOn(executor, 'execute')
     this.collectorCollectSinceSpied = jest.spyOn(collector, 'collectSince')

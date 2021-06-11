@@ -10,7 +10,6 @@ lib
 
 # storage
 storage
-store-values
 
 # Dependency directories
 node_modules/

@@ -7,6 +7,7 @@ import { Tracer } from 'tracer'
 import { IScheduler } from './Scheduler'
 import { IExecutor } from './Executor'
 import { BlockchainDate } from './common/BlockchainDate'
+import KeyValueStore from './common/keyValueStore'
 
 class Core {
   private logger: Tracer.Logger
@@ -19,6 +20,7 @@ class Core {
     private executor: IExecutor,
     private scheduler: IScheduler,
     private blockchainDate: BlockchainDate,
+    private keyValueStore: KeyValueStore,
     private config: { startFromBlockNumber: number, blocksChunkSize: number }
   ) {
     this.logger = loggerFactory()
@@ -29,7 +31,7 @@ class Core {
 
     this.executor.account().then(account => this.logger.debug(`Account: ${account}`))
 
-    const lastSyncedBlockNumber = await this.cache.getLastSyncedBlockNumber()
+    const lastSyncedBlockNumber = this.keyValueStore.getLastSyncedBlockNumber() || (await this.cache.getLastSyncedBlockNumber())
     this.logger.debug(`Last synced block number: ${lastSyncedBlockNumber}`)
 
     this.logger.debug('Sync missed/older events')
@@ -45,6 +47,8 @@ class Core {
         this.logger.info('Recovering past event', event)
         await this.cache.save(event)
       }
+
+      this.keyValueStore.setLastSyncedBlockNumber(index)
 
       currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
     }
