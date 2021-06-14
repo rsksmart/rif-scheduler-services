@@ -36,7 +36,7 @@ describe('Recoverer', function (this: {
       await this.setup.scheduleTransaction({ plan: 0, timestamp })
     }
 
-    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address, 0, 10)
+    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address)
 
     const toBlockNumber = await this.web3.eth.getBlockNumber() + 1
 

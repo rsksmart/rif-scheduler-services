@@ -58,7 +58,7 @@ describe('Core', function (this: {
 
     this.cache = new Cache(this.repository)
     const listener = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotSchedule.options.address)
-    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address, 0, 10)
+    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address)
     const executor = new ExecutorMock()
     const collector = new Collector(this.repository)
     const scheduler = new SchedulerMock()

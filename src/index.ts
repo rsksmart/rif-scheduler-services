@@ -35,9 +35,7 @@ const createCoreInstance = async () => {
   const listener = new Listener(environment.BLOCKCHAIN_WS_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
   const recoverer = new Recoverer(
     environment.BLOCKCHAIN_HTTP_URL,
-    environment.ONE_SHOT_SCHEDULER_ADDRESS,
-    environment.ONE_SHOT_SCHEDULER_START_FROM_BLOCK_NUMBER,
-    environment.ONE_SHOT_SCHEDULER_BLOCKS_CHUNK_SIZE
+    environment.ONE_SHOT_SCHEDULER_ADDRESS
   )
   const executor = new Executor(
     environment.BLOCKCHAIN_HTTP_URL,

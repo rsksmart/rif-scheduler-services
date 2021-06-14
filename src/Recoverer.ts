@@ -13,7 +13,7 @@ export class Recoverer {
   private contract: OneShotSchedule;
   private web3: Web3;
 
-  constructor (rpcUrl: string, contractAddress: string, private startFromBlockNumber: number, private blocksChunkSize: number) {
+  constructor (rpcUrl: string, contractAddress: string) {
     this.web3 = new Web3(rpcUrl)
 
     this.contract = (new this.web3.eth.Contract(
