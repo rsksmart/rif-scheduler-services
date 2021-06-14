@@ -11,47 +11,54 @@ import { BlockchainDate } from '../common/BlockchainDate'
 
 jest.setTimeout(17000)
 
-describe('Executor', function (this: {
-  setup: ISetup,
-  web3: Web3,
-  blockchainDate: BlockchainDate;
-  contracts: {
+describe('Executor', () => {
+  let setup: ISetup | undefined
+  let web3: Web3 | undefined
+  let blockchainDate: BlockchainDate | undefined
+  let contracts: {
     tokenAddress: string;
     counterAddress: string;
     oneShotScheduleAddress: string;
-  }
-}) {
+  } | undefined
+
   beforeEach(async () => {
-    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
+    web3 = new Web3(BLOCKCHAIN_HTTP_URL)
 
-    this.contracts = await deployAllContracts(this.web3)
-    this.setup = await setupContracts(
-      this.web3,
-      this.contracts.tokenAddress,
-      this.contracts.counterAddress,
-      this.contracts.oneShotScheduleAddress
+    contracts = await deployAllContracts(web3!)
+    setup = await setupContracts(
+      web3!,
+      contracts!.tokenAddress,
+      contracts!.counterAddress,
+      contracts!.oneShotScheduleAddress
     )
-    this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
+    blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
-    await sendBalanceToProviderAccount(this.web3, MNEMONIC_PHRASE, BLOCKCHAIN_HTTP_URL)
+    await sendBalanceToProviderAccount(web3!, MNEMONIC_PHRASE, BLOCKCHAIN_HTTP_URL)
+  })
+
+  afterEach(() => {
+    setup = undefined
+    web3 = undefined
+    blockchainDate = undefined
+    contracts = undefined
   })
 
   test('Should execute a scheduled tx', async () => {
     const CONFIRMATIONS_REQUIRED = 10
 
-    const currentDate = await this.blockchainDate.now()
+    const currentDate = await blockchainDate!.now()
     const timestamp = addMinutes(currentDate, 5)
 
-    const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp })
+    const transaction = await setup!.scheduleTransaction({ plan: 0, timestamp })
 
     const txExecutor = new Executor(
       BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address,
+      setup!.oneShotSchedule.options.address,
       CONFIRMATIONS_REQUIRED,
       MNEMONIC_PHRASE
     )
 
-    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    const currentBlockNumber = await web3!.eth.getBlockNumber()
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
     await txExecutor.execute(transaction)
@@ -60,14 +67,14 @@ describe('Executor', function (this: {
   test('Should throw error when execute a scheduled tx without the confirmations required', async () => {
     const CONFIRMATIONS_REQUIRED = 10
 
-    const currentDate = await this.blockchainDate.now()
+    const currentDate = await blockchainDate!.now()
     const timestamp = addMinutes(currentDate, 5)
 
-    const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp })
+    const transaction = await setup!.scheduleTransaction({ plan: 0, timestamp })
 
     const txExecutor = new Executor(
       BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address,
+      setup!.oneShotSchedule.options.address,
       CONFIRMATIONS_REQUIRED,
       MNEMONIC_PHRASE
     )
@@ -80,19 +87,19 @@ describe('Executor', function (this: {
   test('Should throw error when execute a scheduled tx twice', async () => {
     const CONFIRMATIONS_REQUIRED = 1
 
-    const currentDate = await this.blockchainDate.now()
+    const currentDate = await blockchainDate!.now()
     const timestamp = addMinutes(currentDate, 5)
 
-    const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp })
+    const transaction = await setup!.scheduleTransaction({ plan: 0, timestamp })
 
     const txExecutor = new Executor(
       BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address,
+      setup!.oneShotSchedule.options.address,
       CONFIRMATIONS_REQUIRED,
       MNEMONIC_PHRASE
     )
 
-    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    const currentBlockNumber = await web3!.eth.getBlockNumber()
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
     await txExecutor.execute(transaction)
@@ -105,21 +112,21 @@ describe('Executor', function (this: {
   test('Should execute a some other contract scheduled', async () => {
     const CONFIRMATIONS_REQUIRED = 1
 
-    const currentDate = await this.blockchainDate.now()
+    const currentDate = await blockchainDate!.now()
     const timestamp = addMinutes(currentDate, 5)
 
-    const accounts = await getAccounts(this.web3)
+    const accounts = await getAccounts(web3!)
 
-    const executeAddress = this.contracts.tokenAddress
+    const executeAddress = contracts!.tokenAddress
 
-    const { executeGas, executeMethod } = await this.setup.getExecutionParameters(
+    const { executeGas, executeMethod } = await setup!.getExecutionParameters(
       ERC677Data.abi as AbiItem[],
       executeAddress,
       'balanceOf',
       [accounts.requestor]
     )
 
-    const transaction = await this.setup.scheduleTransaction({
+    const transaction = await setup!.scheduleTransaction({
       plan: 0,
       timestamp,
       executeMethod,
@@ -129,12 +136,12 @@ describe('Executor', function (this: {
 
     const txExecutor = new Executor(
       BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address,
+      setup!.oneShotSchedule.options.address,
       CONFIRMATIONS_REQUIRED,
       MNEMONIC_PHRASE
     )
 
-    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    const currentBlockNumber = await web3!.eth.getBlockNumber()
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
     await txExecutor.execute(transaction)

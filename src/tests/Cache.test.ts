@@ -10,34 +10,37 @@ jest.setTimeout(7000)
 
 const DB_NAME = 'test_db_store'
 
-describe('Cache', function (this: {
-  dbConnection: Connection;
-  repository: Repository<ScheduledTransaction>
-  cache: Cache
-}) {
+describe('Cache', () => {
+  let dbConnection: Connection | undefined
+  let repository: Repository<ScheduledTransaction> | undefined
+  let cache: Cache | undefined
+
   beforeEach(async () => {
-    this.dbConnection = await createDbConnection(DB_NAME)
-    this.repository = this.dbConnection.getRepository(ScheduledTransaction)
-    this.cache = new Cache(this.repository)
+    dbConnection = await createDbConnection(DB_NAME)
+    repository = dbConnection!.getRepository(ScheduledTransaction)
+    cache = new Cache(repository!)
   })
 
   afterEach(async () => {
-    if (this.dbConnection && this.dbConnection.isConnected) {
-      await resetDatabase(this.dbConnection)
-      await deleteDatabase(this.dbConnection, DB_NAME)
+    if (dbConnection && dbConnection.isConnected) {
+      await resetDatabase(dbConnection)
+      await deleteDatabase(dbConnection, DB_NAME)
     }
+    dbConnection = undefined
+    repository = undefined
+    cache = undefined
   })
 
   test('Should add a new scheduled transaction', async () => {
     const date = addMinutes(new Date(), -2)
 
-    const id = await this.cache.save({
+    const id = await cache!.save({
       id: 'hashedid1',
       timestamp: date,
       blockNumber: 1
     })
 
-    const count = await this.repository.count()
+    const count = await repository!.count()
 
     expect(id).toBe('hashedid1')
     expect(count).toBe(1)
@@ -46,25 +49,25 @@ describe('Cache', function (this: {
   test('Should get latest blockNumber', async () => {
     const date = addMinutes(new Date(), -2)
 
-    await this.cache.save({
+    await cache!.save({
       id: 'hashedid1',
       blockNumber: 20,
       timestamp: date
     })
-    await this.cache.save({
+    await cache!.save({
       id: 'hashedid2',
       blockNumber: 90,
       timestamp: date
     })
-    await this.cache.save({
+    await cache!.save({
       id: 'hashedid3',
       blockNumber: 40,
       timestamp: date
     })
 
-    const lastBlockNumber = await this.cache.getLastSyncedBlockNumber()
+    const lastBlockNumber = await cache!.getLastSyncedBlockNumber()
 
-    const count = await this.repository.count()
+    const count = await repository!.count()
 
     expect(count).toBe(3)
     expect(lastBlockNumber).toBe(90)
@@ -74,22 +77,22 @@ describe('Cache', function (this: {
     const date = addMinutes(new Date(), -2)
     const id = 'hashedid'
 
-    await this.cache.save({
+    await cache!.save({
       id,
       timestamp: date,
       blockNumber: 1
     })
 
-    const count = await this.repository.count()
-    const initialState = (await this.repository.findOne({
+    const count = await repository!.count()
+    const initialState = (await repository!.findOne({
       where: {
         id
       }
     }))?.state
 
-    await this.cache.changeState(id, EMetatransactionState.ExecutionSuccessful)
+    await cache!.changeState(id, EMetatransactionState.ExecutionSuccessful)
 
-    const newState = (await this.repository.findOne({
+    const newState = (await repository!.findOne({
       where: {
         id
       }
@@ -104,22 +107,22 @@ describe('Cache', function (this: {
     const date = addMinutes(new Date(), -2)
     const id = 'hashedid'
 
-    await this.cache.save({
+    await cache!.save({
       id,
       timestamp: date,
       blockNumber: 1
     })
 
-    const count = await this.repository.count()
-    const initialState = (await this.repository.findOne({
+    const count = await repository!.count()
+    const initialState = (await repository!.findOne({
       where: {
         id
       }
     }))?.state
 
-    await this.cache.changeState(id, EMetatransactionState.ExecutionFailed, 'Failed because it`s a test')
+    await cache!.changeState(id, EMetatransactionState.ExecutionFailed, 'Failed because it`s a test')
 
-    const result = (await this.repository.findOne({
+    const result = (await repository!.findOne({
       where: {
         id
       }

@@ -7,38 +7,41 @@ import { BlockchainDate } from '../common/BlockchainDate'
 
 jest.setTimeout(17000)
 
-describe('Recoverer', function (this: {
-  setup: ISetup,
-  web3: Web3,
-  blockchainDate: BlockchainDate;
-}) {
+describe('Recoverer', () => {
+  let setup: ISetup | undefined
+  let blockchainDate: BlockchainDate | undefined
+
   beforeEach(async () => {
-    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
+    const web3 = new Web3(BLOCKCHAIN_HTTP_URL)
 
-    this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
+    blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
-    const contracts = await deployAllContracts(this.web3)
-    this.setup = await setupContracts(
-      this.web3,
+    const contracts = await deployAllContracts(web3)
+    setup = await setupContracts(
+      web3,
       contracts.tokenAddress,
       contracts.counterAddress,
       contracts.oneShotScheduleAddress
     )
   })
+  afterEach(async () => {
+    setup = undefined
+    blockchainDate = undefined
+  })
 
   test('Should get all past scheduled tx events', async () => {
     const NUMBER_OF_SCHEDULED_TX = 2
-    const currentDate = await this.blockchainDate.now()
+    const currentDate = await blockchainDate.now()
 
     for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
       const timestamp = addMinutes(currentDate, 15 + i)
 
-      await this.setup.scheduleTransaction({ plan: 0, timestamp })
+      await setup.scheduleTransaction({ plan: 0, timestamp })
     }
 
     const recoverer = new Recoverer(
       BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address
+      setup!.oneShotSchedule.options.address
     )
 
     const result = await recoverer.recoverScheduledTransactions()

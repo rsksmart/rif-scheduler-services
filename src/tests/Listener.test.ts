@@ -7,42 +7,50 @@ import { BlockchainDate } from '../common/BlockchainDate'
 
 jest.setTimeout(17000)
 
-describe('Listener', function (this: {
-  setup: ISetup,
-  web3: Web3,
-  blockchainDate: BlockchainDate;
-}) {
+describe('Listener', () => {
+  let setup: ISetup | undefined
+  let blockchainDate: BlockchainDate | undefined
+
   beforeEach(async () => {
-    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
+    const web3 = new Web3(BLOCKCHAIN_HTTP_URL)
 
-    this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
+    blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
-    const contracts = await deployAllContracts(this.web3)
-    this.setup = await setupContracts(
-      this.web3,
+    const contracts = await deployAllContracts(web3!)
+    setup = await setupContracts(
+      web3!,
       contracts.tokenAddress,
       contracts.counterAddress,
       contracts.oneShotScheduleAddress
     )
   })
 
-  test('Should execute callback after schedule a new transaction', async (done) => {
-    const provider = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotSchedule.options.address)
+  afterEach(async () => {
+    setup = undefined
+    blockchainDate = undefined
+  })
 
-    provider.listenNewScheduledTransactions(async (event) => {
-      expect(event).toBeDefined()
-      expect(event.id).toBeDefined()
-      expect(event.id).not.toBe('')
-      expect(event.timestamp).toBeDefined()
-      expect(event.blockNumber).toBeGreaterThan(0)
-      await provider.disconnect()
-      done()
-    })
+  test('Should execute callback after schedule a new transaction', (done) => {
+    const asynchronous = async () => {
+      const provider = new Listener(BLOCKCHAIN_WS_URL, setup!.oneShotSchedule.options.address)
 
-    const currentDate = await this.blockchainDate.now()
-    const timestamp = addMinutes(currentDate, 15)
+      provider.listenNewScheduledTransactions(async (event) => {
+        expect(event).toBeDefined()
+        expect(event.id).toBeDefined()
+        expect(event.id).not.toBe('')
+        expect(event.timestamp).toBeDefined()
+        expect(event.blockNumber).toBeGreaterThan(0)
+        await provider.disconnect()
+        done()
+      })
 
-    await this.setup.scheduleTransaction({ plan: 0, timestamp })
+      const currentDate = await blockchainDate!.now()
+      const timestamp = addMinutes(currentDate, 15)
+
+      await setup!.scheduleTransaction({ plan: 0, timestamp })
+    }
+
+    asynchronous()
   })
 
   test('Should not execute new scheduled tx callback when disconnected', async () => {
@@ -50,7 +58,7 @@ describe('Listener', function (this: {
 
     const callback = jest.fn()
 
-    const listener = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotSchedule.options.address)
+    const listener = new Listener(BLOCKCHAIN_WS_URL, setup!.oneShotSchedule.options.address)
 
     listener.on(newScheduledTransactionsError, (error) => {
       expect(error.message).toEqual('connection not open on send()')
@@ -61,9 +69,9 @@ describe('Listener', function (this: {
 
     await listener.disconnect()
 
-    const currentDate = await this.blockchainDate.now()
+    const currentDate = await blockchainDate!.now()
     const timestamp = addMinutes(currentDate, 15)
 
-    await this.setup.scheduleTransaction({ plan: 0, timestamp })
+    await setup!.scheduleTransaction({ plan: 0, timestamp })
   })
 })

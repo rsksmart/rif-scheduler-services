@@ -20,122 +20,130 @@ jest.setTimeout(27000)
 
 const DB_NAME = 'test_db_core'
 
-describe('Core', function (this: {
-  dbConnection: Connection;
-  cache: Cache;
-  repository: Repository<ScheduledTransaction>;
-  web3: Web3;
-  setup: ISetup;
-  core: Core;
-  blockchainDate: BlockchainDate;
-  executorExecuteSpied: any;
-  collectorCollectSinceSpied: any;
-  schedulerStartSpied: any
-}) {
-  afterEach(async () => {
-    if (this.dbConnection && this.dbConnection.isConnected) {
-      await resetDatabase(this.dbConnection)
-      await deleteDatabase(this.dbConnection, DB_NAME)
-    }
-    jest.clearAllMocks()
-  })
+describe('Core', () => {
+  let dbConnection: Connection | undefined
+  let repository: Repository<ScheduledTransaction> | undefined
+  let setup: ISetup | undefined
+  let core: Core | undefined
+  let blockchainDate: BlockchainDate | undefined
+  let executorExecuteSpied: any | undefined
+  let collectorCollectSinceSpied: any | undefined
+  let schedulerStartSpied: any | undefined
+
   beforeEach(async () => {
-    this.dbConnection = await createDbConnection(DB_NAME)
+    dbConnection = await createDbConnection(DB_NAME)
 
-    this.repository = this.dbConnection.getRepository(ScheduledTransaction)
+    repository = dbConnection.getRepository(ScheduledTransaction)
 
-    this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
+    const web3 = new Web3(BLOCKCHAIN_HTTP_URL)
 
-    const contracts = await deployAllContracts(this.web3)
-    this.setup = await setupContracts(
-      this.web3,
+    const contracts = await deployAllContracts(web3!)
+    setup = await setupContracts(
+      web3!,
       contracts.tokenAddress,
       contracts.counterAddress,
       contracts.oneShotScheduleAddress
     )
 
-    this.cache = new Cache(this.repository)
-    const listener = new Listener(BLOCKCHAIN_WS_URL, this.setup.oneShotSchedule.options.address)
-    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address)
+    const cache = new Cache(repository!)
+    const listener = new Listener(BLOCKCHAIN_WS_URL, setup!.oneShotSchedule.options.address)
+    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, setup!.oneShotSchedule.options.address)
     const executor = new ExecutorMock()
-    const collector = new Collector(this.repository)
+    const collector = new Collector(repository!)
     const scheduler = new SchedulerMock()
-    this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
+    blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
-    this.core = new Core(recoverer, listener, this.cache, collector, executor, scheduler, this.blockchainDate)
+    core = new Core(recoverer, listener, cache!, collector, executor, scheduler, blockchainDate!)
 
-    this.executorExecuteSpied = jest.spyOn(executor, 'execute')
-    this.collectorCollectSinceSpied = jest.spyOn(collector, 'collectSince')
-    this.schedulerStartSpied = jest.spyOn(scheduler, 'start')
+    executorExecuteSpied = jest.spyOn(executor, 'execute')
+    collectorCollectSinceSpied = jest.spyOn(collector, 'collectSince')
+    schedulerStartSpied = jest.spyOn(scheduler, 'start')
+  })
+
+  afterEach(async () => {
+    if (dbConnection && dbConnection.isConnected) {
+      await resetDatabase(dbConnection)
+      await deleteDatabase(dbConnection, DB_NAME)
+    }
+    jest.clearAllMocks()
+
+    dbConnection = undefined
+    repository = undefined
+    setup = undefined
+    core = undefined
+    blockchainDate = undefined
+    executorExecuteSpied = undefined
+    collectorCollectSinceSpied = undefined
+    schedulerStartSpied = undefined
   })
 
   // TODO: if we stop the service then fails to reconnect
   // for now it's not possible to stop it because it hangs out
   test('Should sync transactions after a restart', async () => {
-    const currentDate = await this.blockchainDate.now()
+    const currentDate = await blockchainDate!.now()
     for (let i = 0; i < 4; i++) {
       const timestamp1 = addMinutes(currentDate, 15 + i)
-      await this.setup.scheduleTransaction({ plan: 0, timestamp: timestamp1 })
+      await setup!.scheduleTransaction({ plan: 0, timestamp: timestamp1 })
     }
 
-    await this.core.start()
+    await core!.start()
 
     await sleep(2000)
-    const cachedCount = await this.repository.count()
+    const cachedCount = await repository!.count()
 
     expect(cachedCount).toBe(4)
 
-    await this.core.stop()
-    expect(this.schedulerStartSpied).toBeCalledTimes(1)
-    expect(this.collectorCollectSinceSpied).toBeCalledTimes(1)
-    expect(this.executorExecuteSpied).toBeCalledTimes(0)
+    await core!.stop()
+    expect(schedulerStartSpied).toBeCalledTimes(1)
+    expect(collectorCollectSinceSpied).toBeCalledTimes(1)
+    expect(executorExecuteSpied).toBeCalledTimes(0)
   })
 
   test('Should cache new scheduled transactions', async () => {
-    await this.core.start()
+    await core!.start()
 
-    const currentDate = await this.blockchainDate.now()
+    const currentDate = await blockchainDate!.now()
     for (let i = 0; i < 2; i++) {
       const timestamp = addMinutes(currentDate, 15 + i)
-      await this.setup.scheduleTransaction({ plan: 0, timestamp })
+      await setup!.scheduleTransaction({ plan: 0, timestamp })
     }
 
     await sleep(2000)
-    const count = await this.repository.count()
+    const count = await repository!.count()
 
     expect(count).toBe(2)
 
-    await this.core.stop()
+    await core!.stop()
 
-    expect(this.schedulerStartSpied).toBeCalledTimes(1)
-    expect(this.collectorCollectSinceSpied).toBeCalledTimes(1)
-    expect(this.executorExecuteSpied).toBeCalledTimes(0)
+    expect(schedulerStartSpied).toBeCalledTimes(1)
+    expect(collectorCollectSinceSpied).toBeCalledTimes(1)
+    expect(executorExecuteSpied).toBeCalledTimes(0)
   })
 
   test('Should collect and execute cached tx`s', async () => {
     const DIFF_IN_MINUTES = 15
 
-    const currentDate = await this.blockchainDate.now()
+    const currentDate = await blockchainDate!.now()
     const timestampFuture = addMinutes(currentDate, DIFF_IN_MINUTES)
 
-    const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp: timestampFuture })
+    const transaction = await setup!.scheduleTransaction({ plan: 0, timestamp: timestampFuture })
 
     await time.increase(DIFF_IN_MINUTES * 60)
     await time.advanceBlock()
 
-    await this.core.start()
+    await core!.start()
 
-    const cachedTx = await this.repository.findOne({
+    const cachedTx = await repository!.findOne({
       where: {
         id: transaction.id
       }
     })
 
-    await this.core.stop()
-    expect(this.schedulerStartSpied).toBeCalledTimes(1)
-    expect(this.collectorCollectSinceSpied).toBeCalledTimes(1)
-    expect(this.executorExecuteSpied).toBeCalledTimes(1)
-    expect(this.executorExecuteSpied).toBeCalledWith(transaction)
+    await core!.stop()
+    expect(schedulerStartSpied).toBeCalledTimes(1)
+    expect(collectorCollectSinceSpied).toBeCalledTimes(1)
+    expect(executorExecuteSpied).toBeCalledTimes(1)
+    expect(executorExecuteSpied).toBeCalledWith(transaction)
     expect(cachedTx).toBeDefined()
     expect(cachedTx?.state).toBe(EMetatransactionState.ExecutionSuccessful)
   })
