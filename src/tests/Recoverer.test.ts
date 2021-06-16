@@ -31,12 +31,12 @@ describe('Recoverer', () => {
 
   test('Should get all past scheduled tx events', async () => {
     const NUMBER_OF_SCHEDULED_TX = 2
-    const currentDate = await blockchainDate.now()
+    const currentDate = await blockchainDate!.now()
 
     for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
       const timestamp = addMinutes(currentDate, 15 + i)
 
-      await setup.scheduleTransaction({ plan: 0, timestamp })
+      await setup!.scheduleTransaction({ plan: 0, timestamp })
     }
 
     const recoverer = new Recoverer(
