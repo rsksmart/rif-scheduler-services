@@ -29,9 +29,10 @@ describe('Recoverer', function (this: {
   test('Should get all past scheduled tx events', async () => {
     const NUMBER_OF_SCHEDULED_TX = 2
     const currentDate = await this.blockchainDate.now()
-    const timestamp = addMinutes(currentDate, 15)
 
     for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
+      const timestamp = addMinutes(currentDate, 15 + i)
+
       await this.setup.scheduleTransaction({ plan: 0, timestamp })
     }
 
