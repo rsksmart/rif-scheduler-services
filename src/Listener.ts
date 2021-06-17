@@ -37,24 +37,6 @@ export class Listener extends EventEmitter {
   async listenNewScheduledTransactions (
     invoke: (eventValues: IMetatransaction) => Promise<void>
   ) {
-    this.web3.eth.subscribe('logs', {
-      // address: '0x123456..',
-      // topics: ['0x12345...']
-    }, function(error, result) {
-        console.log("error", error)
-        if (!error)
-            console.log("result", result);
-    })
-    .on("connected", function(subscriptionId){
-        console.log("connected", subscriptionId);
-    })
-    .on("data", function(log){
-        console.log("data", log);
-    })
-    .on("changed", function(log){
-        console.log("changed", log);
-    });
-
     this.contract.events.ExecutionRequested(
       { fromBlock: 'latest' },
       async (error, event) => {
