@@ -1,7 +1,11 @@
 import { Cache } from './Cache'
 import loggerFactory from './common/loggerFactory'
 import { Recoverer } from './Recoverer'
-import { Listener, newScheduledTransactionsError, webSocketProviderError } from './Listener'
+import {
+  Listener,
+  newScheduledTransactionsError,
+  webSocketProviderError
+} from './Listener'
 import { Collector } from './Collector'
 import { Tracer } from 'tracer'
 import { IScheduler } from './Scheduler'
@@ -31,24 +35,41 @@ class Core {
 
     this.executor.account().then(account => this.logger.debug(`Account: ${account}`))
 
-    const lastSyncedBlockNumber = this.keyValueStore.getLastSyncedBlockNumber() || (await this.cache.getLastSyncedBlockNumber())
-    this.logger.debug(`Last synced block number: ${lastSyncedBlockNumber}`)
-
     this.logger.debug('Sync missed/older events')
-    const lastBlockNumberOrDefault = lastSyncedBlockNumber || this.config.startFromBlockNumber
+
+    const lastBlockNumberFromCache = await this.cache.getLastSyncedBlockNumber() ?? 0
+    const lastSyncedBlockNumberStored = this.keyValueStore.getLastSyncedBlockNumber() ?? 0
+
     let currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
 
-    for (let index = lastBlockNumberOrDefault; index < currentBlockNumber; index += this.config.blocksChunkSize) {
-      this.logger.debug(`Recovering: ${index} / ${currentBlockNumber}`)
+    let lastSyncedBlockNumber = Math.max(
+      lastBlockNumberFromCache,
+      lastSyncedBlockNumberStored,
+      this.config.startFromBlockNumber
+    )
 
-      const pastEvents = await this.recoverer.recoverScheduledTransactions(index, index + this.config.blocksChunkSize)
+    this.logger.debug(`Last synced block number: ${lastSyncedBlockNumber}`)
+
+    while (currentBlockNumber > lastSyncedBlockNumber) {
+      this.logger.debug(`Recovering: ${lastSyncedBlockNumber} / ${currentBlockNumber}`)
+
+      let currentChunkBlockNumber = lastSyncedBlockNumber + this.config.blocksChunkSize
+      if (currentChunkBlockNumber > currentBlockNumber) {
+        currentChunkBlockNumber = currentBlockNumber
+      }
+
+      const pastEvents = await this.recoverer.recoverScheduledTransactions(
+        lastSyncedBlockNumber,
+        currentChunkBlockNumber
+      )
 
       for (const event of pastEvents) {
         this.logger.info('Recovering past event', event)
         await this.cache.save(event)
       }
 
-      this.keyValueStore.setLastSyncedBlockNumber(index)
+      lastSyncedBlockNumber = currentChunkBlockNumber
+      this.keyValueStore.setLastSyncedBlockNumber(currentChunkBlockNumber)
 
       currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
     }
