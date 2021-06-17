@@ -15,8 +15,8 @@
     <a href="https://lgtm.com/projects/g/rsksmart/rif-scheduler-services/context:javascript">
         <img src="https://img.shields.io/lgtm/grade/javascript/github/rsksmart/rif-scheduler-services">
     </a>
-    <a href="https://codecov.io/gh/rsksmart/rif-scheduler-services">
-        <img src="https://codecov.io/gh/rsksmart/rif-scheduler-contracts/branch/develop/graph/badge.svg?token=72T5TQ34HT"/>
+    <a href='https://coveralls.io/github/rsksmart/rif-scheduler-services?branch=main'>
+        <img src='https://coveralls.io/repos/github/rsksmart/rif-scheduler-services/badge.svg?branch=develop' alt='Coverage Status' />
     </a>
 </p>
 
