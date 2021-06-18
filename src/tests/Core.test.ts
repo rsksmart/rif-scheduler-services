@@ -73,7 +73,7 @@ describe('Core', function (this: {
       scheduler,
       this.blockchainDate,
       new Store(),
-      { startFromBlockNumber: 0, blocksChunkSize: 1000 }
+      { startFromBlockNumber: 0, blocksChunkSize: 10 }
     )
 
     this.executorExecuteSpied = jest.spyOn(executor, 'execute')

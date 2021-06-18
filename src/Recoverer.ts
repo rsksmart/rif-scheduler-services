@@ -26,16 +26,15 @@ export class Recoverer {
     return this.web3.eth.getBlockNumber()
   }
 
-  async recoverScheduledTransactions (fromBlock: number, toBlock: number): Promise<IMetatransaction[]> {
-    // TODO: find a better way to get the event name, meanwhile, if the event change we has to change the string
+  async recoverScheduledTransactions (fromBlock: number, toBlock: number)
+  : Promise<IMetatransaction[]> {
+    // TODO: find a better way to get the event name.
+    //       meanwhile, if the event change we has to change the string.
     const eventName: ExecutionRequested | string = 'ExecutionRequested'
 
     const pastEvents = await this.contract.getPastEvents(
       eventName,
-      {
-        fromBlock,
-        toBlock: toBlock - 1
-      }
+      { fromBlock, toBlock }
     )
 
     return pastEvents.map(event => ({
