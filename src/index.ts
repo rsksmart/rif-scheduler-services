@@ -34,7 +34,7 @@ const createCoreInstance = async () => {
   const repository = dbConnection.getRepository(ScheduledTransaction)
 
   const cache = new Cache(repository)
-  let listener: IListener = new PollingListener(environment.BLOCKCHAIN_WS_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
+  let listener: IListener = new PollingListener(environment.BLOCKCHAIN_HTTP_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
   if (process.argv.includes('--websocket')) {
     listener = new WebSocketListener(environment.BLOCKCHAIN_WS_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
   }
