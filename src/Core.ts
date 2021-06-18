@@ -78,7 +78,7 @@ class Core {
     })
 
     this.logger.debug('Start listening new execution requests')
-    await this.listener.listenNewExecutionRequests()
+    await this.listener.listenNewExecutionRequests(currentBlockNumber)
 
     this.logger.debug('Start scheduler')
     await this.scheduler.start(async () => {
