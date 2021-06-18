@@ -13,7 +13,7 @@ COPY ./tsconfig.json ./
 RUN npm run types
 RUN npm run build:prod
 
-RUN chown -R node: /app
-USER node
+# RUN chown -R node: /app
+# USER node
 
 CMD ["npm", "run", "start:prod"]

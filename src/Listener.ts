@@ -17,6 +17,7 @@ export const webSocketProviderError = 'webSocketProviderError'
 export class Listener extends EventEmitter {
   private webSocketProvider: WebsocketProvider;
   private contract: OneShotSchedule;
+  private web3: Web3;
 
   constructor (rpcUrl: string, contractAddress: string) {
     super()
@@ -25,9 +26,9 @@ export class Listener extends EventEmitter {
       rpcUrl
     )
 
-    const web3 = new Web3(this.webSocketProvider)
+    this.web3 = new Web3(this.webSocketProvider)
 
-    this.contract = (new web3.eth.Contract(
+    this.contract = (new this.web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
       contractAddress
     ) as any) as OneShotSchedule
@@ -37,7 +38,7 @@ export class Listener extends EventEmitter {
     invoke: (eventValues: IMetatransaction) => Promise<void>
   ) {
     this.contract.events.ExecutionRequested(
-      {},
+      { fromBlock: 'latest' },
       async (error, event) => {
         if (error) return this.emit(newScheduledTransactionsError, error)
 

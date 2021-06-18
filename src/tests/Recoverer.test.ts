@@ -5,7 +5,7 @@ import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { BlockchainDate } from '../common/BlockchainDate'
 
-jest.setTimeout(17000)
+jest.setTimeout(170000)
 
 describe('Recoverer', function (this: {
   setup: ISetup,
@@ -26,22 +26,21 @@ describe('Recoverer', function (this: {
     )
   })
 
-  test('Should get all past scheduled tx events', async () => {
-    const NUMBER_OF_SCHEDULED_TX = 2
+  test.only('Should get all past scheduled tx events', async () => {
+    const NUMBER_OF_SCHEDULED_TX = 25
     const currentDate = await this.blockchainDate.now()
+    const fromBlockNumber = await this.web3.eth.getBlockNumber()
 
     for (let i = 0; i < NUMBER_OF_SCHEDULED_TX; i++) {
       const timestamp = addMinutes(currentDate, 15 + i)
-
       await this.setup.scheduleTransaction({ plan: 0, timestamp })
     }
 
-    const recoverer = new Recoverer(
-      BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address
-    )
+    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address)
 
-    const result = await recoverer.recoverScheduledTransactions()
+    const toBlockNumber = await this.web3.eth.getBlockNumber() + 1
+
+    const result = await recoverer.recoverScheduledTransactions(fromBlockNumber, toBlockNumber)
 
     expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
 
