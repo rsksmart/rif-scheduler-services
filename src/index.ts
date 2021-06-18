@@ -3,6 +3,7 @@ import { ScheduledTransaction } from './common/entities'
 import { createDbConnection } from './common/createDbConnection'
 import { Cache } from './Cache'
 import { WebSocketListener } from './WebSocketListener'
+import { PollingListener } from './PollingListener'
 import { Recoverer } from './Recoverer'
 import { Collector } from './Collector'
 import { Scheduler } from './Scheduler'
@@ -10,6 +11,7 @@ import { Executor } from './Executor'
 import Core from './Core'
 import { BlockchainDate } from './common/BlockchainDate'
 import Store from './common/Store'
+import { IListener } from './IListener'
 require('dotenv').config()
 
 const environment = {
@@ -32,7 +34,11 @@ const createCoreInstance = async () => {
   const repository = dbConnection.getRepository(ScheduledTransaction)
 
   const cache = new Cache(repository)
-  const listener = new WebSocketListener(environment.BLOCKCHAIN_WS_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
+  let listener: IListener = new PollingListener(environment.BLOCKCHAIN_WS_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
+  if (process.argv.includes('--websocket')) {
+    listener = new WebSocketListener(environment.BLOCKCHAIN_WS_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
+  }
+
   const recoverer = new Recoverer(environment.BLOCKCHAIN_HTTP_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
   const executor = new Executor(
     environment.BLOCKCHAIN_HTTP_URL,
