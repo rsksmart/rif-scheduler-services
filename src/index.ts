@@ -2,7 +2,7 @@ import { setupDemo } from './tests/setupDemo'
 import { ScheduledTransaction } from './common/entities'
 import { createDbConnection } from './common/createDbConnection'
 import { Cache } from './Cache'
-import { Listener } from './Listener'
+import { WebSocketListener } from './WebSocketListener'
 import { Recoverer } from './Recoverer'
 import { Collector } from './Collector'
 import { Scheduler } from './Scheduler'
@@ -32,11 +32,8 @@ const createCoreInstance = async () => {
   const repository = dbConnection.getRepository(ScheduledTransaction)
 
   const cache = new Cache(repository)
-  const listener = new Listener(environment.BLOCKCHAIN_WS_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
-  const recoverer = new Recoverer(
-    environment.BLOCKCHAIN_HTTP_URL,
-    environment.ONE_SHOT_SCHEDULER_ADDRESS
-  )
+  const listener = new WebSocketListener(environment.BLOCKCHAIN_WS_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
+  const recoverer = new Recoverer(environment.BLOCKCHAIN_HTTP_URL, environment.ONE_SHOT_SCHEDULER_ADDRESS)
   const executor = new Executor(
     environment.BLOCKCHAIN_HTTP_URL,
     environment.ONE_SHOT_SCHEDULER_ADDRESS,

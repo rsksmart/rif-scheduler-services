@@ -6,59 +6,63 @@ import OneShotScheduleData from './contracts/OneShotSchedule.json'
 import { OneShotSchedule } from './contracts/types/OneShotSchedule'
 import IMetatransaction from './common/IMetatransaction'
 import parseBlockchainTimestamp from './common/parseBlockchainTimestamp'
-
-export const newScheduledTransactionsError = 'newScheduledTransactionsError'
-export const webSocketProviderError = 'webSocketProviderError'
+import { IListener, EListenerEvents } from './IListener'
 
 /**
  * This module listens to new events in the contract.
  * It is used to collect all the new schedulings.
  */
-export class Listener extends EventEmitter {
+export class WebSocketListener extends EventEmitter implements IListener {
   private webSocketProvider: WebsocketProvider;
   private contract: OneShotSchedule;
-  private web3: Web3;
+  private isConnected: boolean;
 
   constructor (rpcUrl: string, contractAddress: string) {
     super()
+
+    this.isConnected = true
 
     this.webSocketProvider = new Web3.providers.WebsocketProvider(
       rpcUrl
     )
 
-    this.web3 = new Web3(this.webSocketProvider)
+    const web3 = new Web3(this.webSocketProvider)
 
-    this.contract = (new this.web3.eth.Contract(
+    this.contract = (new web3.eth.Contract(
       OneShotScheduleData.abi as AbiItem[],
       contractAddress
     ) as any) as OneShotSchedule
   }
 
-  async listenNewScheduledTransactions (
-    invoke: (eventValues: IMetatransaction) => Promise<void>
-  ) {
+  async listenNewExecutionRequests (
+    startFromBlockNumber?: number
+  ) : Promise<void> {
     this.contract.events.ExecutionRequested(
-      { fromBlock: 'latest' },
+      { fromBlock: startFromBlockNumber || 'latest' },
       async (error, event) => {
-        if (error) return this.emit(newScheduledTransactionsError, error)
+        if (!this.isConnected) return
 
-        invoke({
+        if (error) return this.emit(EListenerEvents.ExecutionRequestedError, error)
+
+        this.emit(EListenerEvents.ExecutionRequested, {
           blockNumber: event.blockNumber,
           id: event.returnValues.id,
           timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
-        })
+        } as IMetatransaction)
       }
     )
   }
 
   async disconnect (): Promise<void> {
+    this.isConnected = false
+
     return new Promise((resolve) => {
       this.webSocketProvider.on('end', () => {
         resolve()
       })
 
       this.webSocketProvider.on('error', () => {
-        this.emit(webSocketProviderError)
+        this.emit(EListenerEvents.ProviderError)
         resolve()
       })
 
