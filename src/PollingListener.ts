@@ -1,11 +1,8 @@
-import { EventEmitter } from 'events'
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from './contracts/OneShotSchedule.json'
 import { OneShotSchedule } from './contracts/types/OneShotSchedule'
-import IMetatransaction from './common/IMetatransaction'
-import parseBlockchainTimestamp from './common/parseBlockchainTimestamp'
-import { IListener, EListenerEvents } from './IListener'
+import { Listener } from './Listener'
 import { EOneShotScheduleEvents } from './common/OneShotScheduleEvents'
 
 const DEFAULT_POLLING_INTERVAL = 60000
@@ -14,7 +11,7 @@ const DEFAULT_POLLING_INTERVAL = 60000
  * This module listens to new events in the contract.
  * It is used to collect all the new schedulings.
  */
-export class PollingListener extends EventEmitter implements IListener {
+export class PollingListener extends Listener {
   private contract: OneShotSchedule
   private web3: Web3
   private intervalId?: any
@@ -49,17 +46,11 @@ export class PollingListener extends EventEmitter implements IListener {
           }
         )
 
-        for (const event of pastEvents) {
-          this.emit(EListenerEvents.ExecutionRequested, {
-            blockNumber: event.blockNumber,
-            id: event.returnValues.id,
-            timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
-          } as IMetatransaction)
-        }
+        this.emitExecutionsRequested(pastEvents)
 
         this.lastBlockNumber = currentIntervalBlockNumber
       } catch (error) {
-        this.emit(EListenerEvents.ExecutionRequestedError, error)
+        this.emitExecutionRequestedError(error)
       }
     }, this.pollingInterval)
   }

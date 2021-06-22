@@ -7,14 +7,14 @@ import { IScheduler } from './Scheduler'
 import { IExecutor } from './Executor'
 import { BlockchainDate } from './common/BlockchainDate'
 import Store from './common/Store'
-import { IListener, EListenerEvents } from './IListener'
+import { Listener, EListenerEvents } from './Listener'
 
 class Core {
   private logger: Tracer.Logger
 
   constructor (
     private recoverer: Recoverer,
-    private listener: IListener,
+    private listener: Listener,
     private cache: Cache,
     private collector: Collector,
     private executor: IExecutor,

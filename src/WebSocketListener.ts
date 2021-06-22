@@ -1,18 +1,15 @@
-import { EventEmitter } from 'events'
 import Web3 from 'web3'
 import { WebsocketProvider } from 'web3-core/types/index'
 import { AbiItem } from 'web3-utils'
 import OneShotScheduleData from './contracts/OneShotSchedule.json'
 import { OneShotSchedule } from './contracts/types/OneShotSchedule'
-import IMetatransaction from './common/IMetatransaction'
-import parseBlockchainTimestamp from './common/parseBlockchainTimestamp'
-import { IListener, EListenerEvents } from './IListener'
+import { Listener } from './Listener'
 
 /**
  * This module listens to new events in the contract.
  * It is used to collect all the new schedulings.
  */
-export class WebSocketListener extends EventEmitter implements IListener {
+export class WebSocketListener extends Listener {
   private webSocketProvider: WebsocketProvider;
   private contract: OneShotSchedule;
   private isConnected: boolean;
@@ -42,13 +39,9 @@ export class WebSocketListener extends EventEmitter implements IListener {
       async (error, event) => {
         if (!this.isConnected) return
 
-        if (error) return this.emit(EListenerEvents.ExecutionRequestedError, error)
+        if (error) return this.emitExecutionRequestedError(error)
 
-        this.emit(EListenerEvents.ExecutionRequested, {
-          blockNumber: event.blockNumber,
-          id: event.returnValues.id,
-          timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
-        } as IMetatransaction)
+        this.emitExecutionsRequested([event])
       }
     )
   }
@@ -62,7 +55,7 @@ export class WebSocketListener extends EventEmitter implements IListener {
       })
 
       this.webSocketProvider.on('error', () => {
-        this.emit(EListenerEvents.ProviderError)
+        this.emitProviderError()
         resolve()
       })
 

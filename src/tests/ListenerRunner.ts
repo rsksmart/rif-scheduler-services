@@ -3,7 +3,7 @@ import { addMinutes } from 'date-fns'
 import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { BlockchainDate } from '../common/BlockchainDate'
-import { EListenerEvents, IListener } from '../IListener'
+import { EListenerEvents, Listener } from '../Listener'
 import { sleep } from './utils'
 
 jest.setTimeout(17000)
@@ -15,7 +15,7 @@ export function runListenerWith (name: string, Listener: any, listenerRpcUrl: st
     setup: ISetup,
     web3: Web3,
     blockchainDate: BlockchainDate;
-    listener: IListener;
+    listener: Listener;
   }) {
     beforeEach(async () => {
       this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
@@ -30,7 +30,10 @@ export function runListenerWith (name: string, Listener: any, listenerRpcUrl: st
         contracts.oneShotScheduleAddress
       )
 
-      this.listener = new Listener(listenerRpcUrl, this.setup.oneShotSchedule.options.address)
+      this.listener = new Listener(
+        listenerRpcUrl,
+        this.setup.oneShotSchedule.options.address
+      )
       if ((this.listener as any).pollingInterval) {
         (this.listener as any).pollingInterval = WAIT_MILLISECONDS
       }
