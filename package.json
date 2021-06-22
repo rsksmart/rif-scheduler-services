@@ -29,6 +29,7 @@
   "homepage": "https://github.com/rsksmart/rif-scheduler-services#readme",
   "dependencies": {
     "@openzeppelin/test-helpers": "^0.5.11",
+    "@rsksmart/rif-scheduler-contracts": "^1.0.0",
     "@truffle/hdwallet-provider": "^1.4.1",
     "date-fns": "^2.22.1",
     "dotenv": "^10.0.0",
