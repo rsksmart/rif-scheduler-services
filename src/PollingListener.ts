@@ -1,9 +1,9 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
-import OneShotScheduleData from './contracts/OneShotSchedule.json'
-import { OneShotSchedule } from './contracts/types/OneShotSchedule'
+import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
+import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 import { Listener } from './Listener'
-import { EOneShotScheduleEvents } from './common/OneShotScheduleEvents'
+import { ERIFSchedulerEvents } from './common/RIFSchedulerEvents'
 
 const DEFAULT_POLLING_INTERVAL = 60000
 
@@ -12,7 +12,7 @@ const DEFAULT_POLLING_INTERVAL = 60000
  * It is used to collect all the new schedulings.
  */
 export class PollingListener extends Listener {
-  private contract: OneShotSchedule
+  private contract: RIFScheduler
   private web3: Web3
   private intervalId?: any
   private lastBlockNumber = 0
@@ -24,9 +24,9 @@ export class PollingListener extends Listener {
     this.web3 = new Web3(rpcUrl)
 
     this.contract = (new this.web3.eth.Contract(
-      OneShotScheduleData.abi as AbiItem[],
+      RIFSchedulerData.abi as AbiItem[],
       contractAddress
-    ) as any) as OneShotSchedule
+    ) as any) as RIFScheduler
   }
 
   async listenNewExecutionRequests (
@@ -39,7 +39,7 @@ export class PollingListener extends Listener {
         const currentIntervalBlockNumber = await this.web3.eth.getBlockNumber()
 
         const pastEvents = await this.contract.getPastEvents(
-          EOneShotScheduleEvents.ExecutionRequested,
+          ERIFSchedulerEvents.ExecutionRequested,
           {
             fromBlock: this.lastBlockNumber,
             toBlock: currentIntervalBlockNumber

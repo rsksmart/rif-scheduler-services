@@ -31,7 +31,6 @@ Install dependencies:
 
 ```sh
 npm i
-npm run types
 ```
 
 ### Run unit tests
@@ -103,11 +102,11 @@ npm run build:prod
     # 12 words mnemonic phrase of the wallet you want to use to pay the executions
     MNEMONIC_PHRASE=confirm fragile hobby...
     # Address of the one shot scheduler smart contract
-    ONE_SHOT_SCHEDULER_ADDRESS=0x...
+    RIF_SCHEDULER_ADDRESS=0x...
     # Block number that indicates from where starting the recovering, usually it will be block number where was deployed the one shot scheduler smart contract
-    ONE_SHOT_SCHEDULER_START_FROM_BLOCK_NUMBER=0
+    RIF_SCHEDULER_START_FROM_BLOCK_NUMBER=0
     # Number of blocks that represent a chunk, needed to paginate the recovering process
-    ONE_SHOT_SCHEDULER_BLOCKS_CHUNK_SIZE=10000
+    RIF_SCHEDULER_BLOCKS_CHUNK_SIZE=10000
 
     # [Optional] Cron expression that specifies the frequency of the Scheduler execution. Default: each 5 minutes.
     SCHEDULER_CRON_EXPRESSION=*/5 * * * *
@@ -127,7 +126,7 @@ As a service provider you must to take into account that the execution window is
 
 We recommend at least 12 confirmations with a window of 3-5 minutes. This is directly related to the recurrence of the transaction executions, that runs each 5 minutes (Configurable by `SCHEDULER_CRON_EXPRESSION` environment variable).  
 
-You can configure the *required confirmations* with their own environment variable (`REQUIRED_CONFIRMATIONS`) and the window time is set by the `addPlan` method of the `OneShotSchedule` smart contract.
+You can configure the *required confirmations* with their own environment variable (`REQUIRED_CONFIRMATIONS`) and the window time is set by the `addPlan` method of the `RIFScheduler` smart contract.
 
 ## Demo
 

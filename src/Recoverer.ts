@@ -1,26 +1,26 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
-import OneShotScheduleData from './contracts/OneShotSchedule.json'
-import { OneShotSchedule } from './contracts/types/OneShotSchedule'
+import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
+import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 import IMetatransaction from './common/IMetatransaction'
 import parseBlockchainTimestamp from './common/parseBlockchainTimestamp'
-import { EOneShotScheduleEvents } from './common/OneShotScheduleEvents'
+import { ERIFSchedulerEvents } from './common/RIFSchedulerEvents'
 
 /**
  * This module recovers all the events that happened since a certain block.
  * It is used to retrieve all events since the last time the service was stopped.
  */
 export class Recoverer {
-  private contract: OneShotSchedule;
+  private contract: RIFScheduler;
   private web3: Web3;
 
   constructor (rpcUrl: string, contractAddress: string) {
     this.web3 = new Web3(rpcUrl)
 
     this.contract = (new this.web3.eth.Contract(
-      OneShotScheduleData.abi as AbiItem[],
+      RIFSchedulerData.abi as AbiItem[],
       contractAddress
-    ) as any) as OneShotSchedule
+    ) as any) as RIFScheduler
   }
 
   async getCurrentBlockNumber () {
@@ -30,7 +30,7 @@ export class Recoverer {
   async recoverScheduledTransactions (fromBlock: number, toBlock: number)
   : Promise<IMetatransaction[]> {
     const pastEvents = await this.contract.getPastEvents(
-      EOneShotScheduleEvents.ExecutionRequested,
+      ERIFSchedulerEvents.ExecutionRequested,
       { fromBlock, toBlock }
     )
 

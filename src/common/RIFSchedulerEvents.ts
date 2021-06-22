@@ -5,9 +5,9 @@ import {
   ExecutionPurchased,
   PlanAdded,
   PlanRemoved
-} from '../contracts/types/OneShotSchedule'
+} from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 
-export type TOneShotScheduleEvents =
+export type TRIFSchedulerEvents =
     ExecutionRequested |
     ExecutionCancelled |
     ExecutionPurchased |
@@ -15,7 +15,7 @@ export type TOneShotScheduleEvents =
     PlanAdded |
     PlanRemoved
 
-export enum EOneShotScheduleEvents {
+export enum ERIFSchedulerEvents {
   ExecutionRequested = 'ExecutionRequested',
   ExecutionCancelled = 'ExecutionCancelled',
   ExecutionPurchased = 'ExecutionPurchased',

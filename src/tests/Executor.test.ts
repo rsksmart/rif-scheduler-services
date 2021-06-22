@@ -18,7 +18,7 @@ describe('Executor', function (this: {
   contracts: {
     tokenAddress: string;
     counterAddress: string;
-    oneShotScheduleAddress: string;
+    rifSchedulerAddress: string;
   }
 }) {
   beforeEach(async () => {
@@ -29,7 +29,7 @@ describe('Executor', function (this: {
       this.web3,
       this.contracts.tokenAddress,
       this.contracts.counterAddress,
-      this.contracts.oneShotScheduleAddress
+      this.contracts.rifSchedulerAddress
     )
     this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
@@ -46,7 +46,7 @@ describe('Executor', function (this: {
 
     const txExecutor = new Executor(
       BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address,
+      this.setup.rifScheduler.options.address,
       CONFIRMATIONS_REQUIRED,
       MNEMONIC_PHRASE
     )
@@ -67,7 +67,7 @@ describe('Executor', function (this: {
 
     const txExecutor = new Executor(
       BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address,
+      this.setup.rifScheduler.options.address,
       CONFIRMATIONS_REQUIRED,
       MNEMONIC_PHRASE
     )
@@ -87,7 +87,7 @@ describe('Executor', function (this: {
 
     const txExecutor = new Executor(
       BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address,
+      this.setup.rifScheduler.options.address,
       CONFIRMATIONS_REQUIRED,
       MNEMONIC_PHRASE
     )
@@ -129,7 +129,7 @@ describe('Executor', function (this: {
 
     const txExecutor = new Executor(
       BLOCKCHAIN_HTTP_URL,
-      this.setup.oneShotSchedule.options.address,
+      this.setup.rifScheduler.options.address,
       CONFIRMATIONS_REQUIRED,
       MNEMONIC_PHRASE
     )

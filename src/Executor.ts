@@ -1,7 +1,8 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
-import OneShotScheduleData from './contracts/OneShotSchedule.json'
-import { OneShotSchedule } from './contracts/types/OneShotSchedule'
+import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
+// eslint-disable-next-line max-len
+import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 import IMetatransaction, { EMetatransactionState } from './common/IMetatransaction'
 
 // HDWallet must be imported with require otherwise npm run build will fail
@@ -18,7 +19,7 @@ export interface IExecutor {
 export class Executor implements IExecutor {
   private web3: Web3;
   private hdWalletProvider: any;
-  private oneShotScheduleContract: OneShotSchedule;
+  private rifSchedulerContract: RIFScheduler;
   private confirmationsRequired: number;
   private contractAddress: string;
   private mnemonicPhrase: string;
@@ -45,10 +46,10 @@ export class Executor implements IExecutor {
 
     this.web3 = new Web3(this.hdWalletProvider)
 
-    this.oneShotScheduleContract = (new this.web3.eth.Contract(
-      OneShotScheduleData.abi as AbiItem[],
+    this.rifSchedulerContract = (new this.web3.eth.Contract(
+      RIFSchedulerData.abi as AbiItem[],
       this.contractAddress
-    ) as any) as OneShotSchedule
+    ) as any) as RIFScheduler
   }
 
   private async ensureConfirmations ({ blockNumber }: IMetatransaction) {
@@ -80,11 +81,11 @@ export class Executor implements IExecutor {
 
       const providerAccountAddress = await this.account()
 
-      const executeGas = await this.oneShotScheduleContract.methods
+      const executeGas = await this.rifSchedulerContract.methods
         .execute(id)
         .estimateGas()
 
-      await this.oneShotScheduleContract.methods
+      await this.rifSchedulerContract.methods
         .execute(id)
         .send({ from: providerAccountAddress, gas: executeGas })
     } finally {
@@ -93,7 +94,7 @@ export class Executor implements IExecutor {
   }
 
   async getCurrentState (id: string) : Promise<EMetatransactionState> {
-    const currentState = await this.oneShotScheduleContract.methods
+    const currentState = await this.rifSchedulerContract.methods
       .getState(id).call()
 
     return currentState as EMetatransactionState

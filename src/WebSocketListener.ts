@@ -1,8 +1,8 @@
 import Web3 from 'web3'
 import { WebsocketProvider } from 'web3-core/types/index'
 import { AbiItem } from 'web3-utils'
-import OneShotScheduleData from './contracts/OneShotSchedule.json'
-import { OneShotSchedule } from './contracts/types/OneShotSchedule'
+import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
+import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 import { Listener } from './Listener'
 
 /**
@@ -11,7 +11,7 @@ import { Listener } from './Listener'
  */
 export class WebSocketListener extends Listener {
   private webSocketProvider: WebsocketProvider;
-  private contract: OneShotSchedule;
+  private contract: RIFScheduler;
   private isConnected: boolean;
 
   constructor (rpcUrl: string, contractAddress: string) {
@@ -26,9 +26,9 @@ export class WebSocketListener extends Listener {
     const web3 = new Web3(this.webSocketProvider)
 
     this.contract = (new web3.eth.Contract(
-      OneShotScheduleData.abi as AbiItem[],
+      RIFSchedulerData.abi as AbiItem[],
       contractAddress
-    ) as any) as OneShotSchedule
+    ) as any) as RIFScheduler
   }
 
   async listenNewExecutionRequests (
