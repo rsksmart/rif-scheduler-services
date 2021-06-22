@@ -1,68 +1,65 @@
 import { EventEmitter } from 'events'
-import Web3 from 'web3'
-import { WebsocketProvider } from 'web3-core/types/index'
-import { AbiItem } from 'web3-utils'
-import OneShotScheduleData from './contracts/OneShotSchedule.json'
-import { OneShotSchedule } from './contracts/types/OneShotSchedule'
 import IMetatransaction from './common/IMetatransaction'
 import parseBlockchainTimestamp from './common/parseBlockchainTimestamp'
 
-export const newScheduledTransactionsError = 'newScheduledTransactionsError'
-export const webSocketProviderError = 'webSocketProviderError'
+export enum EListenerEvents {
+  ProviderError = 'ProviderError',
+  ExecutionRequestedError = 'ExecutionRequestedError',
+  ExecutionRequested = 'ExecutionRequested'
+}
 
 /**
  * This module listens to new events in the contract.
  * It is used to collect all the new schedulings.
  */
-export class Listener extends EventEmitter {
-  private webSocketProvider: WebsocketProvider;
-  private contract: OneShotSchedule;
-  private web3: Web3;
+interface IListener extends EventEmitter {
+  listenNewExecutionRequests (
+    startFromBlockNumber?: number
+  ) : Promise<void>;
+  disconnect (): Promise<void>
 
-  constructor (rpcUrl: string, contractAddress: string) {
-    super()
+  on(
+    event: EListenerEvents.ExecutionRequested,
+    listener: (result: IMetatransaction) => void
+  ): this;
+  on(
+    event: EListenerEvents.ExecutionRequestedError,
+    listener: (error: Error) => void
+  ): this;
+  on(
+    event: EListenerEvents.ProviderError,
+    listener: () => void
+  ): this;
+}
 
-    this.webSocketProvider = new Web3.providers.WebsocketProvider(
-      rpcUrl
-    )
+export interface ExecutionRequestedEvent {
+  blockNumber: number,
+  returnValues: {
+    [key: string]: any;
+  }
+}
+export abstract class Listener extends EventEmitter implements IListener {
+  abstract listenNewExecutionRequests (
+    startFromBlockNumber?: number
+  ) : Promise<void>;
 
-    this.web3 = new Web3(this.webSocketProvider)
+  abstract disconnect (): Promise<void>
 
-    this.contract = (new this.web3.eth.Contract(
-      OneShotScheduleData.abi as AbiItem[],
-      contractAddress
-    ) as any) as OneShotSchedule
+  protected emitExecutionsRequested (events: ExecutionRequestedEvent[]) {
+    for (const event of events) {
+      this.emit(EListenerEvents.ExecutionRequested, {
+        blockNumber: event.blockNumber,
+        id: event.returnValues.id,
+        timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
+      } as IMetatransaction)
+    }
   }
 
-  async listenNewScheduledTransactions (
-    invoke: (eventValues: IMetatransaction) => Promise<void>
-  ) {
-    this.contract.events.ExecutionRequested(
-      { fromBlock: 'latest' },
-      async (error, event) => {
-        if (error) return this.emit(newScheduledTransactionsError, error)
-
-        invoke({
-          blockNumber: event.blockNumber,
-          id: event.returnValues.id,
-          timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
-        })
-      }
-    )
+  protected emitExecutionRequestedError (error: Error) {
+    this.emit(EListenerEvents.ExecutionRequestedError, error)
   }
 
-  async disconnect (): Promise<void> {
-    return new Promise((resolve) => {
-      this.webSocketProvider.on('end', () => {
-        resolve()
-      })
-
-      this.webSocketProvider.on('error', () => {
-        this.emit(webSocketProviderError)
-        resolve()
-      })
-
-      this.webSocketProvider.disconnect(0, 'close app')
-    })
+  protected emitProviderError () {
+    this.emit(EListenerEvents.ProviderError)
   }
 }

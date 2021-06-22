@@ -1,17 +1,13 @@
 import { Cache } from './Cache'
 import loggerFactory from './common/loggerFactory'
 import { Recoverer } from './Recoverer'
-import {
-  Listener,
-  newScheduledTransactionsError,
-  webSocketProviderError
-} from './Listener'
 import { Collector } from './Collector'
 import { Tracer } from 'tracer'
 import { IScheduler } from './Scheduler'
 import { IExecutor } from './Executor'
 import { BlockchainDate } from './common/BlockchainDate'
 import Store from './common/Store'
+import { Listener, EListenerEvents } from './Listener'
 
 class Core {
   private logger: Tracer.Logger
@@ -74,14 +70,15 @@ class Core {
       currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
     }
 
-    this.listener.on(newScheduledTransactionsError, this.logger.error)
-    this.listener.on(webSocketProviderError, this.logger.error)
-
-    this.logger.debug('Start listening new events')
-    await this.listener.listenNewScheduledTransactions(async (event) => {
-      this.logger.info('New scheduled execution', event)
-      await this.cache.save(event)
+    this.listener.on(EListenerEvents.ExecutionRequestedError, this.logger.error)
+    this.listener.on(EListenerEvents.ProviderError, this.logger.error)
+    this.listener.on(EListenerEvents.ExecutionRequested, async (result) => {
+      this.logger.info('New execution requested', result)
+      await this.cache.save(result)
     })
+
+    this.logger.debug('Start listening new execution requests')
+    await this.listener.listenNewExecutionRequests(currentBlockNumber)
 
     this.logger.debug('Start scheduler')
     await this.scheduler.start(async () => {
