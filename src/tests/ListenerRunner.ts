@@ -27,12 +27,12 @@ export function runListenerWith (name: string, Listener: any, listenerRpcUrl: st
         this.web3,
         contracts.tokenAddress,
         contracts.counterAddress,
-        contracts.oneShotScheduleAddress
+        contracts.rifSchedulerAddress
       )
 
       this.listener = new Listener(
         listenerRpcUrl,
-        this.setup.oneShotSchedule.options.address
+        this.setup.rifScheduler.options.address
       )
       if ((this.listener as any).pollingInterval) {
         (this.listener as any).pollingInterval = WAIT_MILLISECONDS

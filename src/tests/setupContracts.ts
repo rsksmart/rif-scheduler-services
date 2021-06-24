@@ -1,15 +1,16 @@
 import Web3 from 'web3'
-import { AbiItem, toBN } from 'web3-utils'
+import { AbiItem } from 'web3-utils'
 import parseBlockchainTimestamp from '../common/parseBlockchainTimestamp'
 import IMetatransaction from '../common/IMetatransaction'
-import ERC677Data from '../contracts/ERC677.json'
-import { ERC677 } from '../contracts/types/ERC677'
-import CounterData from '../contracts/Counter.json'
-import { Counter } from '../contracts/types/Counter'
-import OneShotScheduleData from '../contracts/OneShotSchedule.json'
-import { OneShotSchedule } from '../contracts/types/OneShotSchedule'
+import ERC677Data from './contracts/ERC677.json'
+import CounterData from './contracts/Counter.json'
+import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
+// eslint-disable-next-line max-len
+import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 import { deployContract } from './utils'
-import BN from 'bn.js'
+
+const toBN = Web3.utils.toBN
+type BN = ReturnType<typeof toBN>
 
 export interface IScheduleRequest {
   plan: number;
@@ -20,9 +21,9 @@ export interface IScheduleRequest {
   executeValue?: string | number | BN | undefined;
 }
 export interface ISetup {
-  oneShotSchedule: OneShotSchedule;
-  token: ERC677;
-  counter: Counter;
+  rifScheduler: RIFScheduler;
+  token: any;
+  counter: any;
   accounts: {
     requestor: string;
     serviceProvider: string;
@@ -51,33 +52,26 @@ export const deployAllContracts = async (web3: Web3) => {
     ERC677Data.abi as AbiItem[],
     ERC677Data.bytecode,
     [accounts.contractAdmin, toBN('1000000000000000000000'), 'RIFOS', 'RIF']
-  )) as any as ERC677
+  )) as any
 
   const counter = (await deployContract(
     web3,
     CounterData.abi as AbiItem[],
     CounterData.bytecode,
     []
-  )) as any as Counter
+  )) as any
 
-  const oneShotScheduleContract = (await deployContract(
+  const RIFScheduleContract = (await deployContract(
     web3,
-    OneShotScheduleData.abi as AbiItem[],
-    OneShotScheduleData.bytecode,
-    []
-  )) as any as OneShotSchedule
-
-  const initializeGas = await oneShotScheduleContract.methods
-    .initialize(accounts.serviceProvider, accounts.payee)
-    .estimateGas({ from: web3.eth.defaultAccount })
-  await oneShotScheduleContract.methods
-    .initialize(accounts.serviceProvider, accounts.payee)
-    .send({ from: web3.eth.defaultAccount, gas: initializeGas })
+    RIFSchedulerData.abi as AbiItem[],
+    RIFSchedulerData.bytecode,
+    [accounts.serviceProvider, accounts.payee]
+  )) as any as RIFScheduler
 
   return {
     tokenAddress: token.options.address,
     counterAddress: counter.options.address,
-    oneShotScheduleAddress: oneShotScheduleContract.options.address
+    rifSchedulerAddress: RIFScheduleContract.options.address
   }
 }
 
@@ -102,28 +96,28 @@ export const setupContracts = async (
   web3: Web3,
   tokenAddress: string,
   counterAddress: string,
-  oneShotScheduleAddress: string
+  rifSchedulerAddress: string
 ): Promise<ISetup> => {
-  const oneShotSchedule = new web3.eth.Contract(
-    OneShotScheduleData.abi as AbiItem[],
-    oneShotScheduleAddress
-  ) as any as OneShotSchedule
+  const rifScheduler = new web3.eth.Contract(
+    RIFSchedulerData.abi as AbiItem[],
+    rifSchedulerAddress
+  ) as any as RIFScheduler
   const token = new web3.eth.Contract(
     ERC677Data.abi as AbiItem[],
     tokenAddress
-  ) as any as ERC677
+  ) as any
   const counter = new web3.eth.Contract(
     CounterData.abi as AbiItem[],
     counterAddress
-  ) as any as Counter
+  ) as any
 
   const accounts = await getAccounts(web3)
 
   web3.eth.defaultAccount = accounts.contractAdmin
 
   const plans = [
-    { price: toBN(15), window: toBN(10000) },
-    { price: toBN(4), window: toBN(300) }
+    { price: 15, window: 10000 },
+    { price: 4, window: 300 }
   ]
 
   const tokenTransferGas = await token.methods
@@ -133,11 +127,11 @@ export const setupContracts = async (
     .transfer(accounts.requestor, 100000)
     .send({ from: accounts.contractAdmin, gas: tokenTransferGas })
 
-  const addPlanGas = await oneShotSchedule.methods
+  const addPlanGas = await rifScheduler.methods
     .addPlan(plans[0].price, plans[0].window, token.options.address)
     .estimateGas({ from: accounts.serviceProvider })
 
-  await oneShotSchedule.methods
+  await rifScheduler.methods
     .addPlan(plans[0].price, plans[0].window, token.options.address)
     .send({ from: accounts.serviceProvider, gas: addPlanGas })
 
@@ -190,20 +184,20 @@ export const setupContracts = async (
     const timestampContract = toBN(Math.floor(+timestamp / 1000))
 
     const approveGas = await token.methods
-      .approve(oneShotSchedule.options.address, plans[plan].price)
+      .approve(rifScheduler.options.address, plans[plan].price)
       .estimateGas({ from: accounts.requestor })
     await token.methods
-      .approve(oneShotSchedule.options.address, plans[plan].price)
+      .approve(rifScheduler.options.address, plans[plan].price)
       .send({ from: accounts.requestor, gas: approveGas })
 
-    const purchaseGas = await oneShotSchedule.methods
-      .purchase(plan, toBN(1))
+    const purchaseGas = await rifScheduler.methods
+      .purchase(plan, 1)
       .estimateGas({ from: accounts.requestor })
-    await oneShotSchedule.methods
-      .purchase(plan, toBN(1))
+    await rifScheduler.methods
+      .purchase(plan, 1)
       .send({ from: accounts.requestor, gas: purchaseGas })
 
-    const scheduleGas = await oneShotSchedule.methods
+    const scheduleGas = await rifScheduler.methods
       .schedule(
         plan,
         executeAddress,
@@ -212,7 +206,7 @@ export const setupContracts = async (
         timestampContract
       )
       .estimateGas({ from: accounts.requestor })
-    const receipt = await oneShotSchedule.methods
+    const receipt = await rifScheduler.methods
       .schedule(
         plan,
         executeAddress,
@@ -236,7 +230,7 @@ export const setupContracts = async (
   }
 
   return {
-    oneShotSchedule,
+    rifScheduler,
     token,
     counter,
     accounts,

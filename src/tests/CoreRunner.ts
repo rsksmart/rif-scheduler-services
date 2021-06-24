@@ -58,16 +58,16 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
         this.web3,
         contracts.tokenAddress,
         contracts.counterAddress,
-        contracts.oneShotScheduleAddress
+        contracts.rifSchedulerAddress
       )
 
       this.cache = new Cache(this.repository)
-      const listener = new Listener(listenerRpcUrl, this.setup.oneShotSchedule.options.address)
+      const listener = new Listener(listenerRpcUrl, this.setup.rifScheduler.options.address)
       if (listener.pollingInterval) {
         listener.pollingInterval = WAIT_MILLISECONDS
       }
 
-      const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.oneShotSchedule.options.address)
+      const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.rifScheduler.options.address)
       const executor = new ExecutorMock()
       const collector = new Collector(this.repository)
       const scheduler = new SchedulerMock()

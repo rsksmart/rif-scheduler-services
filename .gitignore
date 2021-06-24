@@ -17,8 +17,4 @@ node_modules/
 # others
 .vscode
 junit.xml
-.env
-.env.prod
-
-# typechain generated files
-src/contracts/types/
+.env*

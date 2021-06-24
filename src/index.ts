@@ -19,11 +19,11 @@ const environment = {
   REQUIRED_CONFIRMATIONS: parseInt(process.env.REQUIRED_CONFIRMATIONS as string),
   BLOCKCHAIN_WS_URL: process.env.BLOCKCHAIN_WS_URL as string,
   BLOCKCHAIN_HTTP_URL: process.env.BLOCKCHAIN_HTTP_URL as string,
-  ONE_SHOT_SCHEDULER_ADDRESS: process.env.ONE_SHOT_SCHEDULER_ADDRESS as string,
-  ONE_SHOT_SCHEDULER_START_FROM_BLOCK_NUMBER:
-    parseInt(process.env.ONE_SHOT_SCHEDULER_START_FROM_BLOCK_NUMBER as string),
-  ONE_SHOT_SCHEDULER_BLOCKS_CHUNK_SIZE:
-    parseInt(process.env.ONE_SHOT_SCHEDULER_BLOCKS_CHUNK_SIZE as string),
+  RIF_SCHEDULER_ADDRESS: process.env.RIF_SCHEDULER_ADDRESS as string,
+  RIF_SCHEDULER_START_FROM_BLOCK_NUMBER:
+    parseInt(process.env.RIF_SCHEDULER_START_FROM_BLOCK_NUMBER as string),
+  RIF_SCHEDULER_BLOCKS_CHUNK_SIZE:
+    parseInt(process.env.RIF_SCHEDULER_BLOCKS_CHUNK_SIZE as string),
   COUNTER_ADDRESS: process.env.COUNTER_ADDRESS as string,
   TOKEN_ADDRESS: process.env.TOKEN_ADDRESS as string,
   MNEMONIC_PHRASE: process.env.MNEMONIC_PHRASE as string,
@@ -38,22 +38,22 @@ const createCoreInstance = async () => {
   const cache = new Cache(repository)
   let listener: Listener = new PollingListener(
     environment.BLOCKCHAIN_HTTP_URL,
-    environment.ONE_SHOT_SCHEDULER_ADDRESS
+    environment.RIF_SCHEDULER_ADDRESS
   )
   if (process.argv.includes('--websocket')) {
     listener = new WebSocketListener(
       environment.BLOCKCHAIN_WS_URL,
-      environment.ONE_SHOT_SCHEDULER_ADDRESS
+      environment.RIF_SCHEDULER_ADDRESS
     )
   }
 
   const recoverer = new Recoverer(
     environment.BLOCKCHAIN_HTTP_URL,
-    environment.ONE_SHOT_SCHEDULER_ADDRESS
+    environment.RIF_SCHEDULER_ADDRESS
   )
   const executor = new Executor(
     environment.BLOCKCHAIN_HTTP_URL,
-    environment.ONE_SHOT_SCHEDULER_ADDRESS,
+    environment.RIF_SCHEDULER_ADDRESS,
     environment.REQUIRED_CONFIRMATIONS,
     environment.MNEMONIC_PHRASE
   )
@@ -71,8 +71,8 @@ const createCoreInstance = async () => {
     blockchainDate,
     new Store(),
     {
-      startFromBlockNumber: environment.ONE_SHOT_SCHEDULER_START_FROM_BLOCK_NUMBER,
-      blocksChunkSize: environment.ONE_SHOT_SCHEDULER_BLOCKS_CHUNK_SIZE
+      startFromBlockNumber: environment.RIF_SCHEDULER_START_FROM_BLOCK_NUMBER,
+      blocksChunkSize: environment.RIF_SCHEDULER_BLOCKS_CHUNK_SIZE
     })
 }
 
