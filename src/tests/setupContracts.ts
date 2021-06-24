@@ -52,14 +52,14 @@ export const deployAllContracts = async (web3: Web3) => {
     ERC677Data.abi as AbiItem[],
     ERC677Data.bytecode,
     [accounts.contractAdmin, toBN('1000000000000000000000'), 'RIFOS', 'RIF']
-  )) as any as ERC677
+  )) as any
 
   const counter = (await deployContract(
     web3,
     CounterData.abi as AbiItem[],
     CounterData.bytecode,
     []
-  )) as any as Counter
+  )) as any
 
   const RIFScheduleContract = (await deployContract(
     web3,
