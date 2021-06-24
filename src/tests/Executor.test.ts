@@ -5,7 +5,7 @@ import { time } from '@openzeppelin/test-helpers'
 import { deployAllContracts, getAccounts, ISetup, setupContracts } from './setupContracts'
 import { sendBalanceToProviderAccount } from './sendBalanceToProviderAccount'
 import { BLOCKCHAIN_HTTP_URL, MNEMONIC_PHRASE } from './constants'
-import ERC677Data from '../contracts/ERC677.json'
+import ERC677Data from './contracts/ERC677.json'
 import { AbiItem } from 'web3-utils'
 import { BlockchainDate } from '../common/BlockchainDate'
 

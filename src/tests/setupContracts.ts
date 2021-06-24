@@ -2,10 +2,8 @@ import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import parseBlockchainTimestamp from '../common/parseBlockchainTimestamp'
 import IMetatransaction from '../common/IMetatransaction'
-import ERC677Data from '../contracts/ERC677.json'
-import { ERC677 } from '../contracts/types/ERC677'
-import CounterData from '../contracts/Counter.json'
-import { Counter } from '../contracts/types/Counter'
+import ERC677Data from './contracts/ERC677.json'
+import CounterData from './contracts/Counter.json'
 import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
 // eslint-disable-next-line max-len
 import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
@@ -24,8 +22,8 @@ export interface IScheduleRequest {
 }
 export interface ISetup {
   rifScheduler: RIFScheduler;
-  token: ERC677;
-  counter: Counter;
+  token: any;
+  counter: any;
   accounts: {
     requestor: string;
     serviceProvider: string;
@@ -107,11 +105,11 @@ export const setupContracts = async (
   const token = new web3.eth.Contract(
     ERC677Data.abi as AbiItem[],
     tokenAddress
-  ) as any as ERC677
+  ) as any
   const counter = new web3.eth.Contract(
     CounterData.abi as AbiItem[],
     counterAddress
-  ) as any as Counter
+  ) as any
 
   const accounts = await getAccounts(web3)
 
