@@ -1,4 +1,4 @@
-import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
+import { IMetatransaction, EMetatransactionState } from '../entities'
 import { IExecutor } from '../model'
 import { IScheduler } from '../model'
 

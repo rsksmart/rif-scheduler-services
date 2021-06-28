@@ -3,7 +3,7 @@ import { AbiItem } from 'web3-utils'
 import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
 import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 import { Listener } from './ListenerBase'
-import { ERIFSchedulerEvents } from '../../common/RIFSchedulerEvents'
+import { ERIFSchedulerEvents } from '../../entities'
 
 const DEFAULT_POLLING_INTERVAL = 60000
 

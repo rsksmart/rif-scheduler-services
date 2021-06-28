@@ -30,5 +30,3 @@ export class ScheduledTransaction {
   @Column('text', { nullable: true })
   reason!: string | undefined;
 }
-
-export default [ScheduledTransaction]

@@ -1,5 +1,5 @@
 import Web3 from 'web3'
-import parseBlockchainTimestamp from './parseBlockchainTimestamp'
+import { parseBlockchainTimestamp } from './parseBlockchainTimestamp'
 
 /**
  * This module gets the timestamp of the current block.

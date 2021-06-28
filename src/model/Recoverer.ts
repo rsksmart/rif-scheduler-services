@@ -2,9 +2,8 @@ import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
 import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
-import IMetatransaction from '../common/IMetatransaction'
-import parseBlockchainTimestamp from '../common/parseBlockchainTimestamp'
-import { ERIFSchedulerEvents } from '../common/RIFSchedulerEvents'
+import { parseBlockchainTimestamp } from '../time'
+import { IMetatransaction, ERIFSchedulerEvents } from '../entities'
 
 /**
  * This module recovers all the events that happened since a certain block.

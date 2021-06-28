@@ -1,11 +1,11 @@
 import { createConnection } from 'typeorm'
-import Entities from './entities'
+import { ScheduledTransaction } from '../entities'
 
 export const createDbConnection = (database: string) =>
   createConnection({
     type: 'sqlite',
     database,
-    entities: Entities,
+    entities: [ScheduledTransaction],
     logging: false,
     dropSchema: false,
     synchronize: true,

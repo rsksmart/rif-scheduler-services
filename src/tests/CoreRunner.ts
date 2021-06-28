@@ -1,19 +1,20 @@
-import { createDbConnection } from '../common/createDbConnection'
+import { createDbConnection } from '../storage/createDbConnection'
 import { deleteDatabase, resetDatabase, sleep } from './utils'
 import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { Connection, Repository } from 'typeorm'
-import { ScheduledTransaction } from '../common/entities'
-import { Cache } from '../Cache'
+import { ScheduledTransaction, EMetatransactionState } from '../entities'
+import { Cache, Store } from '../storage'
 import { addMinutes } from 'date-fns'
 import Web3 from 'web3'
 import { Recoverer, Collector } from '../model'
 import Core from '../Core'
-import { EMetatransactionState } from '../common/IMetatransaction'
 import { ExecutorMock, SchedulerMock } from './mocks'
-import { BlockchainDate } from '../common/BlockchainDate'
+import { BlockchainDate } from '../time'
 import { time } from '@openzeppelin/test-helpers'
-import Store from '../common/Store'
+import tracer from 'tracer'
+
+const logger = tracer.colorConsole()
 
 jest.setTimeout(32000)
 
@@ -81,6 +82,7 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
         scheduler,
         this.blockchainDate,
         new Store(),
+        logger,
         { startFromBlockNumber: 0, blocksChunkSize: 10 }
       )
 

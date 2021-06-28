@@ -8,10 +8,8 @@ export enum EMetatransactionState {
   Cancelled = '6'
 }
 
-interface IMetatransaction {
+export interface IMetatransaction {
   id: string;
   timestamp: Date;
   blockNumber: number;
 }
-
-export default IMetatransaction

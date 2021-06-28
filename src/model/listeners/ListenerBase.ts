@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
-import IMetatransaction from '../../common/IMetatransaction'
-import parseBlockchainTimestamp from '../../common/parseBlockchainTimestamp'
+import { IMetatransaction } from '../../entities'
+import { parseBlockchainTimestamp } from '../../time'
 
 export enum EListenerEvents {
   ProviderError = 'ProviderError',

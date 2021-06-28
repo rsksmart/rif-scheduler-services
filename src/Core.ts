@@ -1,17 +1,9 @@
-import { Cache } from './Cache'
-import loggerFactory from './common/loggerFactory'
-import { Recoverer } from './model/Recoverer'
-import { Collector } from './model/Collector'
 import { Tracer } from 'tracer'
-import { IScheduler } from './model/Scheduler'
-import { IExecutor } from './model/Executor'
-import { BlockchainDate } from './common/BlockchainDate'
-import Store from './common/Store'
-import { IListener, EListenerEvents } from './model/listeners'
+import { Recoverer, Collector, IScheduler, IExecutor, IListener, EListenerEvents } from './model'
+import { Cache, Store } from './storage'
+import { BlockchainDate } from './time'
 
 class Core {
-  private logger: Tracer.Logger
-
   constructor (
     private recoverer: Recoverer,
     private listener: IListener,
@@ -21,10 +13,9 @@ class Core {
     private scheduler: IScheduler,
     private blockchainDate: BlockchainDate,
     private keyValueStore: Store,
+    private logger: Tracer.Logger,
     private config: { startFromBlockNumber: number, blocksChunkSize: number }
-  ) {
-    this.logger = loggerFactory()
-  }
+  ) { }
 
   async start () {
     this.logger.debug('Starting...')

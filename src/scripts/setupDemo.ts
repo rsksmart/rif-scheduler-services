@@ -2,7 +2,7 @@ import Web3 from 'web3'
 import { setupContracts } from '../tests/setupContracts'
 import { sendBalanceToProviderAccount } from '../tests/sendBalanceToProviderAccount'
 import { addMinutes, addSeconds } from 'date-fns'
-import { BlockchainDate } from '../common/BlockchainDate'
+import { BlockchainDate } from '../time'
 
 export const setupDemo = async ({
   BLOCKCHAIN_HTTP_URL,

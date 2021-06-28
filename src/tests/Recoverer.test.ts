@@ -3,7 +3,7 @@ import { Recoverer } from '../model'
 import { addMinutes } from 'date-fns'
 import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
-import { BlockchainDate } from '../common/BlockchainDate'
+import { BlockchainDate } from '../time'
 
 jest.setTimeout(170000)
 

@@ -1,10 +1,9 @@
-import { ScheduledTransaction } from '../common/entities'
-import { createDbConnection } from '../common/createDbConnection'
-import { Cache } from '../Cache'
+import tracer from 'tracer'
 import Core from '../Core'
-import { BlockchainDate } from '../common/BlockchainDate'
-import Store from '../common/Store'
 import { Recoverer, Collector, IListener, WebSocketListener, PollingListener, Scheduler, Executor } from '../model'
+import { ScheduledTransaction } from '../entities'
+import { Cache, Store, createDbConnection } from '../storage'
+import { BlockchainDate } from '../time'
 
 export type Environment = {
   DB_NAME: string
@@ -60,6 +59,7 @@ export const createCoreInstance = async (environment: Environment) => {
     scheduler,
     blockchainDate,
     new Store(),
+    tracer.colorConsole(),
     {
       startFromBlockNumber: environment.RIF_SCHEDULER_START_FROM_BLOCK_NUMBER,
       blocksChunkSize: environment.RIF_SCHEDULER_BLOCKS_CHUNK_SIZE

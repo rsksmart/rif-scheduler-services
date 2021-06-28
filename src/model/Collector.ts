@@ -1,7 +1,6 @@
 
 import { LessThanOrEqual, Repository } from 'typeorm'
-import { ScheduledTransaction } from '../common/entities'
-import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
+import { ScheduledTransaction, IMetatransaction, EMetatransactionState } from '../entities'
 
 export const transactionExecutionFailed = 'transactionExecutionFailed'
 export class Collector {

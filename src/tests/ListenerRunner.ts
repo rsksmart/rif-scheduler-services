@@ -2,7 +2,7 @@ import Web3 from 'web3'
 import { addMinutes } from 'date-fns'
 import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
-import { BlockchainDate } from '../common/BlockchainDate'
+import { BlockchainDate } from '../time'
 import { EListenerEvents, IListener } from '../model'
 import { sleep } from './utils'
 

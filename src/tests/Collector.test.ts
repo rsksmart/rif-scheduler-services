@@ -1,11 +1,10 @@
 import { addMinutes } from 'date-fns'
-import { createDbConnection } from '../common/createDbConnection'
+import { createDbConnection } from '../storage/createDbConnection'
 import { deleteDatabase, resetDatabase } from './utils'
 import { Connection, Repository } from 'typeorm'
-import { ScheduledTransaction } from '../common/entities'
-import { Cache } from '../Cache'
+import { ScheduledTransaction, IMetatransaction, EMetatransactionState } from '../entities'
+import { Cache } from '../storage'
 import { Collector } from '../model'
-import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
 
 jest.setTimeout(17000)
 
