@@ -1,7 +1,7 @@
 
 import { LocalStorage } from 'node-localstorage'
 
-class Store {
+export class Store {
     private localStorage: LocalStorage
 
     constructor (directory: string = 'storage/values') {
@@ -22,5 +22,3 @@ class Store {
       this.localStorage.clear()
     }
 }
-
-export default Store

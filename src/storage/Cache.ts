@@ -1,6 +1,6 @@
 import { Repository } from 'typeorm'
-import IMetatransaction, { EMetatransactionState } from './common/IMetatransaction'
-import { ScheduledTransaction } from './common/entities'
+import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
+import { ScheduledTransaction } from '../common/entities'
 
 export class Cache {
   private repository: Repository<ScheduledTransaction>;
