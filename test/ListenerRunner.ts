@@ -1,9 +1,9 @@
 import Web3 from 'web3'
 import { addMinutes } from 'date-fns'
-import { deployAllContracts, ISetup, setupContracts } from '../scripts/setupContracts'
+import { deployAllContracts, ISetup, setupContracts } from '../src/scripts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
-import { BlockchainDate } from '../time'
-import { EListenerEvents, IListener } from '../model'
+import { BlockchainDate } from '../src/time'
+import { EListenerEvents, IListener } from '../src/model'
 import { sleep } from './utils'
 
 jest.setTimeout(17000)

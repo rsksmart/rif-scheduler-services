@@ -1,9 +1,9 @@
 import Web3 from 'web3'
-import { Recoverer } from '../model'
+import { Recoverer } from '../src/model'
 import { addMinutes } from 'date-fns'
-import { deployAllContracts, ISetup, setupContracts } from '../scripts/setupContracts'
+import { deployAllContracts, ISetup, setupContracts } from '../src/scripts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
-import { BlockchainDate } from '../time'
+import { BlockchainDate } from '../src/time'
 
 jest.setTimeout(170000)
 

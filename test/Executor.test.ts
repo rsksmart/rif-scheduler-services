@@ -1,13 +1,12 @@
 import Web3 from 'web3'
-import { Executor } from '../model'
+import { AbiItem } from 'web3-utils'
 import { addMinutes } from 'date-fns'
 import { time } from '@openzeppelin/test-helpers'
-import { deployAllContracts, getAccounts, ISetup, setupContracts } from '../scripts/setupContracts'
-import { sendBalanceToProviderAccount } from '../scripts/sendBalanceToProviderAccount'
+import { Executor } from '../src/model'
+import { deployAllContracts, getAccounts, ISetup, setupContracts, sendBalanceToProviderAccount } from '../src/scripts'
 import { BLOCKCHAIN_HTTP_URL, MNEMONIC_PHRASE } from './constants'
-import ERC677Data from '../scripts/contracts/ERC677.json'
-import { AbiItem } from 'web3-utils'
-import { BlockchainDate } from '../time'
+import ERC677Data from '../src/scripts/contracts/ERC677.json'
+import { BlockchainDate } from '../src/time'
 
 jest.setTimeout(17000)
 
