@@ -3,7 +3,7 @@ import { AbiItem } from 'web3-utils'
 import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
 // eslint-disable-next-line max-len
 import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
-import IMetatransaction, { EMetatransactionState } from './common/IMetatransaction'
+import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
 
 // HDWallet must be imported with require otherwise npm run build will fail
 // Issue: https://github.com/trufflesuite/truffle/issues/2855

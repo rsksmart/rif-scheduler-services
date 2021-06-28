@@ -1,20 +1,20 @@
 import { Cache } from './Cache'
 import loggerFactory from './common/loggerFactory'
-import { Recoverer } from './Recoverer'
-import { Collector } from './Collector'
+import { Recoverer } from './model/Recoverer'
+import { Collector } from './model/Collector'
 import { Tracer } from 'tracer'
-import { IScheduler } from './Scheduler'
-import { IExecutor } from './Executor'
+import { IScheduler } from './model/Scheduler'
+import { IExecutor } from './model/Executor'
 import { BlockchainDate } from './common/BlockchainDate'
 import Store from './common/Store'
-import { Listener, EListenerEvents } from './Listener'
+import { IListener, EListenerEvents } from './model/listeners'
 
 class Core {
   private logger: Tracer.Logger
 
   constructor (
     private recoverer: Recoverer,
-    private listener: Listener,
+    private listener: IListener,
     private cache: Cache,
     private collector: Collector,
     private executor: IExecutor,

@@ -3,7 +3,7 @@ import { addMinutes } from 'date-fns'
 import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { BlockchainDate } from '../common/BlockchainDate'
-import { EListenerEvents, Listener } from '../Listener'
+import { EListenerEvents, IListener } from '../model'
 import { sleep } from './utils'
 
 jest.setTimeout(17000)
@@ -15,7 +15,7 @@ export function runListenerWith (name: string, Listener: any, listenerRpcUrl: st
     setup: ISetup,
     web3: Web3,
     blockchainDate: BlockchainDate;
-    listener: Listener;
+    listener: IListener;
   }) {
     beforeEach(async () => {
       this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)

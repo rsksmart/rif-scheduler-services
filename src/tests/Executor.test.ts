@@ -1,5 +1,5 @@
 import Web3 from 'web3'
-import { Executor } from '../Executor'
+import { Executor } from '../model'
 import { addMinutes } from 'date-fns'
 import { time } from '@openzeppelin/test-helpers'
 import { deployAllContracts, getAccounts, ISetup, setupContracts } from './setupContracts'

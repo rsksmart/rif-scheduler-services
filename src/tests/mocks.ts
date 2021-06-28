@@ -1,6 +1,6 @@
 import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
-import { IExecutor } from '../Executor'
-import { IScheduler } from '../Scheduler'
+import { IExecutor } from '../model'
+import { IScheduler } from '../model'
 
 export class SchedulerMock implements IScheduler {
   async start (task: () => Promise<void>) {

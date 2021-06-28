@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
-import IMetatransaction from './common/IMetatransaction'
-import parseBlockchainTimestamp from './common/parseBlockchainTimestamp'
+import IMetatransaction from '../../common/IMetatransaction'
+import parseBlockchainTimestamp from '../../common/parseBlockchainTimestamp'
 
 export enum EListenerEvents {
   ProviderError = 'ProviderError',
@@ -12,7 +12,7 @@ export enum EListenerEvents {
  * This module listens to new events in the contract.
  * It is used to collect all the new schedulings.
  */
-interface IListener extends EventEmitter {
+export interface IListener extends EventEmitter {
   listenNewExecutionRequests (
     startFromBlockNumber?: number
   ) : Promise<void>;

@@ -1,16 +1,10 @@
 import { ScheduledTransaction } from '../common/entities'
 import { createDbConnection } from '../common/createDbConnection'
 import { Cache } from '../Cache'
-import { WebSocketListener } from '../WebSocketListener'
-import { PollingListener } from '../PollingListener'
-import { Recoverer } from '../Recoverer'
-import { Collector } from '../Collector'
-import { Scheduler } from '../Scheduler'
-import { Executor } from '../Executor'
 import Core from '../Core'
 import { BlockchainDate } from '../common/BlockchainDate'
 import Store from '../common/Store'
-import { Listener } from '../Listener'
+import { Recoverer, Collector, IListener, WebSocketListener, PollingListener, Scheduler, Executor } from '../model'
 
 export type Environment = {
   DB_NAME: string
@@ -32,7 +26,7 @@ export const createCoreInstance = async (environment: Environment) => {
   const repository = dbConnection.getRepository(ScheduledTransaction)
 
   const cache = new Cache(repository)
-  let listener: Listener = new PollingListener(
+  let listener: IListener = new PollingListener(
     environment.BLOCKCHAIN_HTTP_URL,
     environment.RIF_SCHEDULER_ADDRESS
   )

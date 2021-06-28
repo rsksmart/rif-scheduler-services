@@ -4,7 +4,7 @@ import { deleteDatabase, resetDatabase } from './utils'
 import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction } from '../common/entities'
 import { Cache } from '../Cache'
-import { Collector } from '../Collector'
+import { Collector } from '../model'
 import IMetatransaction, { EMetatransactionState } from '../common/IMetatransaction'
 
 jest.setTimeout(17000)
