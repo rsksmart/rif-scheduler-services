@@ -1,8 +1,6 @@
 import { Connection } from 'typeorm'
 import fs from 'fs'
 import Web3 from 'web3'
-import { AbiItem } from 'web3-utils'
-import { Contract } from 'web3-eth-contract'
 
 export const resetDatabase = async (dbConnection: Connection) => {
   await dbConnection.dropDatabase()
@@ -18,23 +16,19 @@ export const sleep = (ms: number) => {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export const deployContract = async (
-  web3: Web3,
-  abi: AbiItem[],
-  bytecode: string,
-  args?: any[]
-): Promise<Contract> => {
-  const contract = new web3.eth.Contract(abi)
-  const deployer = contract.deploy({ data: bytecode, arguments: args })
+export const getAccounts = async (web3: Web3) => {
+  const [
+    serviceProviderAccountAddress,
+    payeeAccountAddress,
+    requestorAccountAddress
+  ] = await web3.eth.getAccounts()
 
-  const from = web3.eth.defaultAccount as string
+  const accounts = {
+    requestor: requestorAccountAddress,
+    serviceProvider: serviceProviderAccountAddress,
+    payee: payeeAccountAddress,
+    contractAdmin: serviceProviderAccountAddress
+  }
 
-  const gas = await deployer.estimateGas({ from })
-
-  return new Promise((resolve, reject) =>
-    deployer
-      .send({ from, gas })
-      .on('error', (error: Error) => reject(error))
-      .then((newContractInstance: Contract) => resolve(newContractInstance))
-  )
+  return accounts
 }

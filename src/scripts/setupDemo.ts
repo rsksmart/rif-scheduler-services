@@ -1,6 +1,6 @@
 import Web3 from 'web3'
-import { setupContracts } from '../tests/setupContracts'
-import { sendBalanceToProviderAccount } from '../tests/sendBalanceToProviderAccount'
+import { setupContracts } from './setupContracts'
+import { sendBalanceToProviderAccount } from './sendBalanceToProviderAccount'
 import { addMinutes, addSeconds } from 'date-fns'
 import { BlockchainDate } from '../time'
 

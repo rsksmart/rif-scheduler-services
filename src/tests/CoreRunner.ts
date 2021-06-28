@@ -1,6 +1,6 @@
 import { createDbConnection } from '../storage/createDbConnection'
 import { deleteDatabase, resetDatabase, sleep } from './utils'
-import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
+import { deployAllContracts, ISetup, setupContracts } from '../scripts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { Connection, Repository } from 'typeorm'
 import { ScheduledTransaction, EMetatransactionState } from '../entities'

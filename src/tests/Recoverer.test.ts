@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { Recoverer } from '../model'
 import { addMinutes } from 'date-fns'
-import { deployAllContracts, ISetup, setupContracts } from './setupContracts'
+import { deployAllContracts, ISetup, setupContracts } from '../scripts/setupContracts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { BlockchainDate } from '../time'
 

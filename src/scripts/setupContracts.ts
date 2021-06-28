@@ -20,6 +20,7 @@ export interface IScheduleRequest {
   executeGas?: BN;
   executeValue?: string | number | BN | undefined;
 }
+
 export interface ISetup {
   rifScheduler: RIFScheduler;
   token: any;
