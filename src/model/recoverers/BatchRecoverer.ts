@@ -22,9 +22,10 @@ export class BatchRecoverer {
       )
 
       lastSyncedBlockNumber = this.currentChunkBlockNumber
-      currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
 
       yield pastEvents
+
+      currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
     }
   }
 }
