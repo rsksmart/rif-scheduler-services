@@ -3,7 +3,7 @@ import { AbiItem } from 'web3-utils'
 import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
 import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 import { parseBlockchainTimestamp } from '../../time'
-import { IMetatransaction, ERIFSchedulerEvents } from '../../entities'
+import { IExecution, ERIFSchedulerEvents } from '../../entities'
 
 /**
  * This module recovers all the events that happened since a certain block.
@@ -27,7 +27,7 @@ export class Recoverer {
   }
 
   async recoverScheduledTransactions (fromBlock: number, toBlock: number)
-  : Promise<IMetatransaction[]> {
+  : Promise<IExecution[]> {
     const pastEvents = await this.contract.getPastEvents(
       ERIFSchedulerEvents.ExecutionRequested,
       { fromBlock, toBlock }

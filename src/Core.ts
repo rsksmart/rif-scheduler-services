@@ -4,6 +4,7 @@ import { Cache, Store } from './storage'
 import { BlockchainDate } from './time'
 
 class Core {
+  // eslint-disable-next-line no-useless-constructor
   constructor (
     private batchRecoverer: BatchRecoverer,
     private listener: IListener,
@@ -27,7 +28,7 @@ class Core {
     const lastBlockNumberFromCache = await this.cache.getLastSyncedBlockNumber() ?? 0
     const lastSyncedBlockNumberStored = this.keyValueStore.getLastSyncedBlockNumber() ?? 0
 
-    let lastSyncedBlockNumber = Math.max(
+    const lastSyncedBlockNumber = Math.max(
       lastBlockNumberFromCache,
       lastSyncedBlockNumberStored,
       this.config.startFromBlockNumber
@@ -37,7 +38,7 @@ class Core {
 
     const iterator = await this.batchRecoverer.iterator(lastSyncedBlockNumber)
 
-    for await (let pastEvents of iterator) {
+    for await (const pastEvents of iterator) {
       for (const event of pastEvents) {
         this.logger.info('Recovering past event', event)
         await this.cache.save(event)
@@ -64,16 +65,11 @@ class Core {
       for (const transaction of collectedTx) {
         this.logger.info('Executing: ', transaction)
 
-        const error = await this.executor
-          .execute(transaction)
-          .catch(error => error)
+        const result = await this.executor.execute(transaction)
+        const reason = result.tx || result.error!.message
 
-        const resultState = await this.executor.getCurrentState(transaction.id)
-        await this.cache.changeState(transaction.id, resultState, error?.message)
-
-        if (error) {
-          this.logger.error(error)
-        }
+        await this.cache.changeState(transaction.id, result.state, reason)
+        if (result.error) this.logger.error(result.error)
       }
     })
   }

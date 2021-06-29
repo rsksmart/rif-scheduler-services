@@ -1,7 +1,9 @@
 import tracer from 'tracer'
 import Core from '../Core'
-import { Recoverer, Collector, IListener, WebSocketListener, PollingListener, Scheduler, Executor, BatchRecoverer } from '../model'
-import { ScheduledTransaction } from '../entities'
+import {
+  Recoverer, Collector, IListener, WebSocketListener, PollingListener, Scheduler, Executor, BatchRecoverer
+} from '../model'
+import { ScheduledExecution } from '../entities'
 import { Cache, Store, createDbConnection } from '../storage'
 import { BlockchainDate } from '../time'
 
@@ -22,7 +24,7 @@ export type Environment = {
 export const createCoreInstance = async (environment: Environment) => {
   const dbConnection = await createDbConnection(environment.DB_NAME)
 
-  const repository = dbConnection.getRepository(ScheduledTransaction)
+  const repository = dbConnection.getRepository(ScheduledExecution)
 
   const cache = new Cache(repository)
   let listener: IListener = new PollingListener(

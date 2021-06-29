@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { IMetatransaction } from '../../entities'
+import { IExecution } from '../../entities'
 import { parseBlockchainTimestamp } from '../../time'
 
 export enum EListenerEvents {
@@ -20,7 +20,7 @@ export interface IListener extends EventEmitter {
 
   on(
     event: EListenerEvents.ExecutionRequested,
-    listener: (result: IMetatransaction) => void
+    listener: (result: IExecution) => void
   ): this;
   on(
     event: EListenerEvents.ExecutionRequestedError,
@@ -51,7 +51,7 @@ export abstract class Listener extends EventEmitter implements IListener {
         blockNumber: event.blockNumber,
         id: event.returnValues.id,
         timestamp: parseBlockchainTimestamp(event.returnValues.timestamp)
-      } as IMetatransaction)
+      } as IExecution)
     }
   }
 
