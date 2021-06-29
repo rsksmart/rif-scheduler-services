@@ -3,7 +3,7 @@ import { AbiItem } from 'web3-utils'
 import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
 // eslint-disable-next-line max-len
 import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
-import { IMetatransaction, EMetatransactionState } from '../entities'
+import { IExecution, EExecutionState } from '../entities'
 
 // HDWallet must be imported with require otherwise npm run build will fail
 // Issue: https://github.com/trufflesuite/truffle/issues/2855
@@ -12,11 +12,11 @@ const HDWalletProvider = require('@truffle/hdwallet-provider')
 type TxResult = {
   tx?: string
   error?: Error
-  state: EMetatransactionState
+  state: EExecutionState
 }
 
 export interface IExecutor {
-  execute (transaction: IMetatransaction): Promise<TxResult>
+  execute (transaction: IExecution): Promise<TxResult>
   stopEngine (): Promise<void>
   account (): Promise<string>
 }
@@ -51,14 +51,14 @@ export class Executor implements IExecutor {
     ) as any) as RIFScheduler
   }
 
-  private async getCurrentState (id: string) : Promise<EMetatransactionState> {
+  private async getCurrentState (id: string) : Promise<EExecutionState> {
     const currentState = await this.rifSchedulerContract.methods
       .getState(id).call()
 
-    return currentState as EMetatransactionState
+    return currentState as EExecutionState
   }
 
-  private async isNotConfirmed ({ blockNumber }: IMetatransaction) {
+  private async isNotConfirmed ({ blockNumber }: IExecution) {
     const currentBlockNumber = await this.web3.eth.getBlockNumber()
 
     const confirmations = currentBlockNumber - blockNumber
@@ -66,15 +66,15 @@ export class Executor implements IExecutor {
     return (confirmations < this.confirmationsRequired)
   }
 
-  private async IsNotScheduled (transaction: IMetatransaction) {
+  private async IsNotScheduled (transaction: IExecution) {
     const currentState = await this.getCurrentState(transaction.id)
 
-    return (currentState !== EMetatransactionState.Scheduled)
+    return (currentState !== EExecutionState.Scheduled)
   }
 
   account = () => this.web3.eth.getAccounts().then(accounts => accounts[0])
 
-  async execute (transaction: IMetatransaction): Promise<TxResult> {
+  async execute (transaction: IExecution): Promise<TxResult> {
     let result: Partial<TxResult>
 
     try {

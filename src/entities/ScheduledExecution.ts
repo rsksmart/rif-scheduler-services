@@ -1,7 +1,7 @@
 import { Entity, Column, Index, PrimaryColumn } from 'typeorm'
 
 @Entity()
-export class ScheduledTransaction {
+export class ScheduledExecution {
   constructor (
     id: string,
     timestamp: string,

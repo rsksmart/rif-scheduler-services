@@ -2,7 +2,7 @@ import { deleteDatabase, resetDatabase, sleep } from './utils'
 import { deployAllContracts, ISetup, setupContracts } from '../src/scripts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { Connection, Repository } from 'typeorm'
-import { ScheduledTransaction, EMetatransactionState } from '../src/entities'
+import { ScheduledExecution, EExecutionState } from '../src/entities'
 import { Cache, Store, createDbConnection } from '../src/storage'
 import { addMinutes } from 'date-fns'
 import Web3 from 'web3'
@@ -25,7 +25,7 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
   describe(`Core with ${name}`, function (this: {
     dbConnection: Connection;
     cache: Cache;
-    repository: Repository<ScheduledTransaction>;
+    repository: Repository<ScheduledExecution>;
     web3: Web3;
     setup: ISetup;
     core: Core;
@@ -48,7 +48,7 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
 
       this.dbConnection = await createDbConnection(DB_NAME)
 
-      this.repository = this.dbConnection.getRepository(ScheduledTransaction)
+      this.repository = this.dbConnection.getRepository(ScheduledExecution)
 
       this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
 
@@ -160,7 +160,7 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
       expect(this.executorExecuteSpied).toBeCalledTimes(1)
       expect(this.executorExecuteSpied).toBeCalledWith(transaction)
       expect(cachedTx).toBeDefined()
-      expect(cachedTx?.state).toBe(EMetatransactionState.ExecutionSuccessful)
+      expect(cachedTx?.state).toBe(EExecutionState.ExecutionSuccessful)
       expect(cachedTx?.reason).toBe('0xMOCKED_TX')
     })
   })
