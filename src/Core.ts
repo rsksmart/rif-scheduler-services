@@ -1,30 +1,22 @@
-import { Cache } from './Cache'
-import loggerFactory from './common/loggerFactory'
-import { Recoverer } from './Recoverer'
-import { Collector } from './Collector'
 import { Tracer } from 'tracer'
-import { IScheduler } from './Scheduler'
-import { IExecutor } from './Executor'
-import { BlockchainDate } from './common/BlockchainDate'
-import Store from './common/Store'
-import { Listener, EListenerEvents } from './Listener'
+import { BatchRecoverer, Collector, IScheduler, IExecutor, IListener, EListenerEvents } from './model'
+import { Cache, Store } from './storage'
+import { BlockchainDate } from './time'
 
 class Core {
-  private logger: Tracer.Logger
-
+  // eslint-disable-next-line no-useless-constructor
   constructor (
-    private recoverer: Recoverer,
-    private listener: Listener,
+    private batchRecoverer: BatchRecoverer,
+    private listener: IListener,
     private cache: Cache,
     private collector: Collector,
     private executor: IExecutor,
     private scheduler: IScheduler,
     private blockchainDate: BlockchainDate,
     private keyValueStore: Store,
-    private config: { startFromBlockNumber: number, blocksChunkSize: number }
-  ) {
-    this.logger = loggerFactory()
-  }
+    private logger: Tracer.Logger,
+    private config: { startFromBlockNumber: number }
+  ) { }
 
   async start () {
     this.logger.debug('Starting...')
@@ -36,9 +28,7 @@ class Core {
     const lastBlockNumberFromCache = await this.cache.getLastSyncedBlockNumber() ?? 0
     const lastSyncedBlockNumberStored = this.keyValueStore.getLastSyncedBlockNumber() ?? 0
 
-    let currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
-
-    let lastSyncedBlockNumber = Math.max(
+    const lastSyncedBlockNumber = Math.max(
       lastBlockNumberFromCache,
       lastSyncedBlockNumberStored,
       this.config.startFromBlockNumber
@@ -46,28 +36,15 @@ class Core {
 
     this.logger.debug(`Last synced block number: ${lastSyncedBlockNumber}`)
 
-    while (currentBlockNumber > lastSyncedBlockNumber) {
-      this.logger.debug(`Recovering: ${lastSyncedBlockNumber} / ${currentBlockNumber}`)
+    const iterator = await this.batchRecoverer.iterator(lastSyncedBlockNumber)
 
-      let currentChunkBlockNumber = lastSyncedBlockNumber + this.config.blocksChunkSize
-      if (currentChunkBlockNumber > currentBlockNumber) {
-        currentChunkBlockNumber = currentBlockNumber
-      }
-
-      const pastEvents = await this.recoverer.recoverScheduledTransactions(
-        lastSyncedBlockNumber,
-        currentChunkBlockNumber
-      )
-
+    for await (const pastEvents of iterator) {
       for (const event of pastEvents) {
         this.logger.info('Recovering past event', event)
         await this.cache.save(event)
       }
 
-      lastSyncedBlockNumber = currentChunkBlockNumber
-      this.keyValueStore.setLastSyncedBlockNumber(currentChunkBlockNumber)
-
-      currentBlockNumber = await this.recoverer.getCurrentBlockNumber()
+      this.keyValueStore.setLastSyncedBlockNumber(this.batchRecoverer.currentChunkBlockNumber)
     }
 
     this.listener.on(EListenerEvents.ExecutionRequestedError, this.logger.error)
@@ -78,7 +55,7 @@ class Core {
     })
 
     this.logger.debug('Start listening new execution requests')
-    await this.listener.listenNewExecutionRequests(currentBlockNumber)
+    await this.listener.listenNewExecutionRequests(this.batchRecoverer.currentChunkBlockNumber)
 
     this.logger.debug('Start scheduler')
     await this.scheduler.start(async () => {
@@ -88,16 +65,11 @@ class Core {
       for (const transaction of collectedTx) {
         this.logger.info('Executing: ', transaction)
 
-        const error = await this.executor
-          .execute(transaction)
-          .catch(error => error)
+        const result = await this.executor.execute(transaction)
+        const reason = result.tx || result.error!.message
 
-        const resultState = await this.executor.getCurrentState(transaction.id)
-        await this.cache.changeState(transaction.id, resultState, error?.message)
-
-        if (error) {
-          this.logger.error(error)
-        }
+        await this.cache.changeState(transaction.id, result.state, reason)
+        if (result.error) this.logger.error(result.error)
       }
     })
   }
