@@ -53,7 +53,9 @@ describe('Executor', function (this: {
     const currentBlockNumber = await this.web3.eth.getBlockNumber()
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
-    await txExecutor.execute(transaction)
+    const result = await txExecutor.execute(transaction)
+
+    expect(await this.web3.eth.getTransactionReceipt(result.tx!)).toBeDefined()
   })
 
   test('Should throw error when execute a scheduled tx without the confirmations required', async () => {
@@ -71,9 +73,8 @@ describe('Executor', function (this: {
       MNEMONIC_PHRASE
     )
 
-    await expect(txExecutor.execute(transaction))
-      .rejects
-      .toThrow('Minimum confirmations required')
+    const result = await txExecutor.execute(transaction)
+    expect(result.error!.message).toEqual('Minimum confirmations required')
   })
 
   test('Should throw error when execute a scheduled tx twice', async () => {
@@ -96,9 +97,8 @@ describe('Executor', function (this: {
 
     await txExecutor.execute(transaction)
 
-    await expect(txExecutor.execute(transaction))
-      .rejects
-      .toThrow('State must be Scheduled')
+    const result = await txExecutor.execute(transaction)
+    expect(result.error!.message).toEqual('State must be Scheduled')
   })
 
   test('Should execute a some other contract scheduled', async () => {
@@ -136,6 +136,8 @@ describe('Executor', function (this: {
     const currentBlockNumber = await this.web3.eth.getBlockNumber()
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
-    await txExecutor.execute(transaction)
+    const result = await txExecutor.execute(transaction)
+
+    expect(await this.web3.eth.getTransactionReceipt(result.tx!)).toBeDefined()
   })
 })

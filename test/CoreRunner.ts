@@ -161,6 +161,7 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
       expect(this.executorExecuteSpied).toBeCalledWith(transaction)
       expect(cachedTx).toBeDefined()
       expect(cachedTx?.state).toBe(EMetatransactionState.ExecutionSuccessful)
+      expect(cachedTx?.reason).toBe('0xMOCKED_TX')
     })
   })
 }

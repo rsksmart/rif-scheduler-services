@@ -9,9 +9,14 @@ import { IMetatransaction, EMetatransactionState } from '../entities'
 // Issue: https://github.com/trufflesuite/truffle/issues/2855
 const HDWalletProvider = require('@truffle/hdwallet-provider')
 
+type TxResult = {
+  tx?: string
+  error?: Error
+  state: EMetatransactionState
+}
+
 export interface IExecutor {
-  execute (transaction: IMetatransaction): Promise<void>
-  getCurrentState (id: string): Promise<EMetatransactionState>
+  execute (transaction: IMetatransaction): Promise<TxResult>
   stopEngine (): Promise<void>
   account (): Promise<string>
 }
@@ -21,9 +26,6 @@ export class Executor implements IExecutor {
   private hdWalletProvider: any;
   private rifSchedulerContract: RIFScheduler;
   private confirmationsRequired: number;
-  private contractAddress: string;
-  private mnemonicPhrase: string;
-  private rpcUrl: string;
 
   constructor (
     rpcUrl: string,
@@ -31,14 +33,11 @@ export class Executor implements IExecutor {
     confirmationsRequired: number,
     mnemonicPhrase: string
   ) {
-    this.contractAddress = contractAddress
     this.confirmationsRequired = confirmationsRequired
-    this.mnemonicPhrase = mnemonicPhrase
-    this.rpcUrl = rpcUrl
 
     this.hdWalletProvider = new HDWalletProvider({
-      mnemonic: this.mnemonicPhrase,
-      providerOrUrl: this.rpcUrl,
+      mnemonic: mnemonicPhrase,
+      providerOrUrl: rpcUrl,
       numberOfAddresses: 1,
       shareNonce: true,
       derivationPath: "m/44'/137'/0'/0/"
@@ -48,36 +47,41 @@ export class Executor implements IExecutor {
 
     this.rifSchedulerContract = (new this.web3.eth.Contract(
       RIFSchedulerData.abi as AbiItem[],
-      this.contractAddress
+      contractAddress
     ) as any) as RIFScheduler
   }
 
-  private async ensureConfirmations ({ blockNumber }: IMetatransaction) {
+  private async getCurrentState (id: string) : Promise<EMetatransactionState> {
+    const currentState = await this.rifSchedulerContract.methods
+      .getState(id).call()
+
+    return currentState as EMetatransactionState
+  }
+
+  private async isNotConfirmed ({ blockNumber }: IMetatransaction) {
     const currentBlockNumber = await this.web3.eth.getBlockNumber()
 
     const confirmations = currentBlockNumber - blockNumber
 
-    if (confirmations < this.confirmationsRequired) {
-      throw new Error('Minimum confirmations required')
-    }
+    return (confirmations < this.confirmationsRequired)
   }
 
-  private async ensureIsScheduled (transaction: IMetatransaction) {
+  private async IsNotScheduled (transaction: IMetatransaction) {
     const currentState = await this.getCurrentState(transaction.id)
 
-    if (currentState !== EMetatransactionState.Scheduled) {
-      throw new Error('State must be Scheduled')
-    }
+    return (currentState !== EMetatransactionState.Scheduled)
   }
 
   account = () => this.web3.eth.getAccounts().then(accounts => accounts[0])
 
-  async execute (transaction: IMetatransaction) {
+  async execute (transaction: IMetatransaction): Promise<TxResult> {
+    let result: Partial<TxResult>
+
     try {
       const { id } = transaction
 
-      await this.ensureConfirmations(transaction)
-      await this.ensureIsScheduled(transaction)
+      if (await this.IsNotScheduled(transaction)) throw new Error('State must be Scheduled')
+      if (await this.isNotConfirmed(transaction)) throw new Error('Minimum confirmations required')
 
       const providerAccountAddress = await this.account()
 
@@ -85,19 +89,18 @@ export class Executor implements IExecutor {
         .execute(id)
         .estimateGas()
 
-      await this.rifSchedulerContract.methods
+      const tx = await this.rifSchedulerContract.methods
         .execute(id)
         .send({ from: providerAccountAddress, gas: executeGas })
+      result = { tx: tx.transactionHash }
+    } catch (error) {
+      result = { error }
     } finally {
       this.hdWalletProvider.engine.stop()
     }
-  }
 
-  async getCurrentState (id: string) : Promise<EMetatransactionState> {
-    const currentState = await this.rifSchedulerContract.methods
-      .getState(id).call()
-
-    return currentState as EMetatransactionState
+    const state = await this.getCurrentState(transaction.id)
+    return Object.assign({}, result, { state })
   }
 
   async stopEngine () {

@@ -64,16 +64,11 @@ class Core {
       for (const transaction of collectedTx) {
         this.logger.info('Executing: ', transaction)
 
-        const error = await this.executor
-          .execute(transaction)
-          .catch(error => error)
+        const result = await this.executor.execute(transaction)
+        const reason = result.tx || result.error!.message
 
-        const resultState = await this.executor.getCurrentState(transaction.id)
-        await this.cache.changeState(transaction.id, resultState, error?.message)
-
-        if (error) {
-          this.logger.error(error)
-        }
+        await this.cache.changeState(transaction.id, result.state, reason)
+        if (result.error) this.logger.error(result.error)
       }
     })
   }
