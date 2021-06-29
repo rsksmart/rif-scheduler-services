@@ -3,7 +3,7 @@ import { addMinutes } from 'date-fns'
 import { Collector } from '../src/model'
 import { Cache, createDbConnection } from '../src/storage'
 import { deleteDatabase, resetDatabase } from './utils'
-import { ScheduledTransaction, IMetatransaction, EMetatransactionState } from '../src/entities'
+import { ScheduledExecution, IExecution, EExecutionState } from '../src/entities'
 
 jest.setTimeout(17000)
 
@@ -12,7 +12,7 @@ const DB_NAME = 'test_db_collector'
 describe('Collector', function (this: {
   dbConnection: Connection;
   cache: Cache;
-  repository: Repository<ScheduledTransaction>;
+  repository: Repository<ScheduledExecution>;
 }) {
   afterEach(async () => {
     if (this.dbConnection && this.dbConnection.isConnected) {
@@ -23,15 +23,16 @@ describe('Collector', function (this: {
   beforeEach(async () => {
     this.dbConnection = await createDbConnection(DB_NAME)
 
-    this.repository = this.dbConnection.getRepository(ScheduledTransaction)
+    this.repository = this.dbConnection.getRepository(ScheduledExecution)
 
     this.cache = new Cache(this.repository)
   })
 
+  // eslint-disable-next-line max-len
   test('Should collect all transactions with state scheduled until the specified timestamp', async () => {
     const timestamp = addMinutes(new Date(), 30)
 
-    const mockMetatransaction: IMetatransaction = {
+    const mockMetatransaction: IExecution = {
       id: 'none',
       timestamp: new Date(),
       blockNumber: 1
@@ -75,7 +76,7 @@ describe('Collector', function (this: {
   test('Should collect transactions only with state scheduled', async () => {
     const timestamp = addMinutes(new Date(), 30)
 
-    const mockMetatransaction: IMetatransaction = {
+    const mockMetatransaction: IExecution = {
       id: 'none',
       timestamp: new Date(),
       blockNumber: 1
@@ -91,13 +92,13 @@ describe('Collector', function (this: {
       id: 'hashedid2',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeState('hashedid2', EMetatransactionState.ExecutionSuccessful)
+    await this.cache.changeState('hashedid2', EExecutionState.ExecutionSuccessful)
     await this.cache.save({
       ...mockMetatransaction,
       id: 'hashedid3',
       timestamp: addMinutes(timestamp, -10)
     })
-    await this.cache.changeState('hashedid3', EMetatransactionState.ExecutionFailed)
+    await this.cache.changeState('hashedid3', EExecutionState.ExecutionFailed)
 
     const count = await this.repository.count()
 

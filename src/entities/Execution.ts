@@ -1,4 +1,4 @@
-export enum EMetatransactionState {
+export enum EExecutionState {
   Nonexistent = '0',
   Scheduled = '1',
   ExecutionSuccessful = '2',
@@ -8,7 +8,7 @@ export enum EMetatransactionState {
   Cancelled = '6'
 }
 
-export interface IMetatransaction {
+export interface IExecution {
   id: string;
   timestamp: Date;
   blockNumber: number;

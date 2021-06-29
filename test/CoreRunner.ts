@@ -2,11 +2,11 @@ import { deleteDatabase, resetDatabase, sleep } from './utils'
 import { deployAllContracts, ISetup, setupContracts } from '../src/scripts'
 import { BLOCKCHAIN_HTTP_URL } from './constants'
 import { Connection, Repository } from 'typeorm'
-import { ScheduledTransaction, EMetatransactionState } from '../src/entities'
+import { ScheduledExecution, EExecutionState } from '../src/entities'
 import { Cache, Store, createDbConnection } from '../src/storage'
 import { addMinutes } from 'date-fns'
 import Web3 from 'web3'
-import { Recoverer, Collector } from '../src/model'
+import { Recoverer, Collector, BatchRecoverer } from '../src/model'
 import Core from '../src/Core'
 import { ExecutorMock, SchedulerMock } from './mocks'
 import { BlockchainDate } from '../src/time'
@@ -25,7 +25,7 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
   describe(`Core with ${name}`, function (this: {
     dbConnection: Connection;
     cache: Cache;
-    repository: Repository<ScheduledTransaction>;
+    repository: Repository<ScheduledExecution>;
     web3: Web3;
     setup: ISetup;
     core: Core;
@@ -48,7 +48,7 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
 
       this.dbConnection = await createDbConnection(DB_NAME)
 
-      this.repository = this.dbConnection.getRepository(ScheduledTransaction)
+      this.repository = this.dbConnection.getRepository(ScheduledExecution)
 
       this.web3 = new Web3(BLOCKCHAIN_HTTP_URL)
 
@@ -61,19 +61,24 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
       )
 
       this.cache = new Cache(this.repository)
-      const listener = new Listener(listenerRpcUrl, this.setup.rifScheduler.options.address)
+      const listener = new Listener(
+        listenerRpcUrl, this.setup.rifScheduler.options.address
+      )
       if (listener.pollingInterval) {
         listener.pollingInterval = WAIT_MILLISECONDS
       }
 
-      const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.rifScheduler.options.address)
+      const recoverer = new Recoverer(
+        BLOCKCHAIN_HTTP_URL, this.setup.rifScheduler.options.address
+      )
+      const batchRecoverer = new BatchRecoverer(recoverer, 10)
       const executor = new ExecutorMock()
       const collector = new Collector(this.repository)
       const scheduler = new SchedulerMock()
       this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
       this.core = new Core(
-        recoverer,
+        batchRecoverer,
         listener,
         this.cache,
         collector,
@@ -82,7 +87,7 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
         this.blockchainDate,
         new Store(),
         logger,
-        { startFromBlockNumber: 0, blocksChunkSize: 10 }
+        { startFromBlockNumber: 0 }
       )
 
       this.executorExecuteSpied = jest.spyOn(executor, 'execute')
@@ -140,7 +145,9 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
       const currentDate = await this.blockchainDate.now()
       const timestampFuture = addMinutes(currentDate, DIFF_IN_MINUTES)
 
-      const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp: timestampFuture })
+      const transaction = await this.setup.scheduleTransaction(
+        { plan: 0, timestamp: timestampFuture }
+      )
 
       await time.increase(DIFF_IN_MINUTES * 60)
       await time.advanceBlock()
@@ -159,7 +166,8 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
       expect(this.executorExecuteSpied).toBeCalledTimes(1)
       expect(this.executorExecuteSpied).toBeCalledWith(transaction)
       expect(cachedTx).toBeDefined()
-      expect(cachedTx?.state).toBe(EMetatransactionState.ExecutionSuccessful)
+      expect(cachedTx?.state).toBe(EExecutionState.ExecutionSuccessful)
+      expect(cachedTx?.reason).toBe('0xMOCKED_TX')
     })
   })
 }

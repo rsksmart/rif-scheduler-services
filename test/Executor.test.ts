@@ -3,7 +3,9 @@ import { AbiItem } from 'web3-utils'
 import { addMinutes } from 'date-fns'
 import { time } from '@openzeppelin/test-helpers'
 import { Executor } from '../src/model'
-import { deployAllContracts, getAccounts, ISetup, setupContracts, sendBalanceToProviderAccount } from '../src/scripts'
+import {
+  deployAllContracts, getAccounts, ISetup, setupContracts, sendBalanceToProviderAccount
+} from '../src/scripts'
 import { BLOCKCHAIN_HTTP_URL, MNEMONIC_PHRASE } from './constants'
 import ERC677Data from '../src/scripts/contracts/ERC677.json'
 import { BlockchainDate } from '../src/time'
@@ -53,28 +55,31 @@ describe('Executor', function (this: {
     const currentBlockNumber = await this.web3.eth.getBlockNumber()
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
-    await txExecutor.execute(transaction)
+    const result = await txExecutor.execute(transaction)
+
+    expect(await this.web3.eth.getTransactionReceipt(result.tx!)).toBeDefined()
   })
 
-  test('Should throw error when execute a scheduled tx without the confirmations required', async () => {
-    const CONFIRMATIONS_REQUIRED = 10
+  test(
+    'Should throw error when execute a scheduled tx without the confirmations required',
+    async () => {
+      const CONFIRMATIONS_REQUIRED = 10
 
-    const currentDate = await this.blockchainDate.now()
-    const timestamp = addMinutes(currentDate, 5)
+      const currentDate = await this.blockchainDate.now()
+      const timestamp = addMinutes(currentDate, 5)
 
-    const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp })
+      const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp })
 
-    const txExecutor = new Executor(
-      BLOCKCHAIN_HTTP_URL,
-      this.setup.rifScheduler.options.address,
-      CONFIRMATIONS_REQUIRED,
-      MNEMONIC_PHRASE
-    )
+      const txExecutor = new Executor(
+        BLOCKCHAIN_HTTP_URL,
+        this.setup.rifScheduler.options.address,
+        CONFIRMATIONS_REQUIRED,
+        MNEMONIC_PHRASE
+      )
 
-    await expect(txExecutor.execute(transaction))
-      .rejects
-      .toThrow('Minimum confirmations required')
-  })
+      const result = await txExecutor.execute(transaction)
+      expect(result.error!.message).toEqual('Minimum confirmations required')
+    })
 
   test('Should throw error when execute a scheduled tx twice', async () => {
     const CONFIRMATIONS_REQUIRED = 1
@@ -96,9 +101,8 @@ describe('Executor', function (this: {
 
     await txExecutor.execute(transaction)
 
-    await expect(txExecutor.execute(transaction))
-      .rejects
-      .toThrow('State must be Scheduled')
+    const result = await txExecutor.execute(transaction)
+    expect(result.error!.message).toEqual('State must be Scheduled')
   })
 
   test('Should execute a some other contract scheduled', async () => {
@@ -136,6 +140,8 @@ describe('Executor', function (this: {
     const currentBlockNumber = await this.web3.eth.getBlockNumber()
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
-    await txExecutor.execute(transaction)
+    const result = await txExecutor.execute(transaction)
+
+    expect(await this.web3.eth.getTransactionReceipt(result.tx!)).toBeDefined()
   })
 })

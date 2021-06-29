@@ -36,11 +36,15 @@ describe('Recoverer', function (this: {
       await this.setup.scheduleTransaction({ plan: 0, timestamp })
     }
 
-    const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.rifScheduler.options.address)
+    const recoverer = new Recoverer(
+      BLOCKCHAIN_HTTP_URL, this.setup.rifScheduler.options.address
+    )
 
     const toBlockNumber = await this.web3.eth.getBlockNumber() + 1
 
-    const result = await recoverer.recoverScheduledTransactions(fromBlockNumber, toBlockNumber)
+    const result = await recoverer.recoverScheduledTransactions(
+      fromBlockNumber, toBlockNumber
+    )
 
     expect(result.length).toBe(NUMBER_OF_SCHEDULED_TX)
 

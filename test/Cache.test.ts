@@ -1,6 +1,6 @@
 import { Connection, Repository } from 'typeorm'
 import { addMinutes } from 'date-fns'
-import { ScheduledTransaction, EMetatransactionState } from '../src/entities'
+import { ScheduledExecution, EExecutionState } from '../src/entities'
 import { Cache, createDbConnection } from '../src/storage'
 import { deleteDatabase, resetDatabase } from './utils'
 
@@ -10,12 +10,12 @@ const DB_NAME = 'test_db_store'
 
 describe('Cache', function (this: {
   dbConnection: Connection;
-  repository: Repository<ScheduledTransaction>
+  repository: Repository<ScheduledExecution>
   cache: Cache
 }) {
   beforeEach(async () => {
     this.dbConnection = await createDbConnection(DB_NAME)
-    this.repository = this.dbConnection.getRepository(ScheduledTransaction)
+    this.repository = this.dbConnection.getRepository(ScheduledExecution)
     this.cache = new Cache(this.repository)
   })
 
@@ -85,7 +85,7 @@ describe('Cache', function (this: {
       }
     }))?.state
 
-    await this.cache.changeState(id, EMetatransactionState.ExecutionSuccessful)
+    await this.cache.changeState(id, EExecutionState.ExecutionSuccessful)
 
     const newState = (await this.repository.findOne({
       where: {
@@ -95,7 +95,7 @@ describe('Cache', function (this: {
 
     expect(count).toBe(1)
     expect(initialState).not.toBe(newState)
-    expect(newState).toBe(EMetatransactionState.ExecutionSuccessful)
+    expect(newState).toBe(EExecutionState.ExecutionSuccessful)
   })
 
   test('Should be able to save a reason for the state change', async () => {
@@ -115,7 +115,8 @@ describe('Cache', function (this: {
       }
     }))?.state
 
-    await this.cache.changeState(id, EMetatransactionState.ExecutionFailed, 'Failed because it`s a test')
+    // eslint-disable-next-line max-len
+    await this.cache.changeState(id, EExecutionState.ExecutionFailed, 'Failed because it`s a test')
 
     const result = (await this.repository.findOne({
       where: {
@@ -126,7 +127,7 @@ describe('Cache', function (this: {
     expect(count).toBe(1)
     expect(result).toBeDefined()
     expect(initialState).not.toBe(result?.state)
-    expect(result?.state).toBe(EMetatransactionState.ExecutionFailed)
+    expect(result?.state).toBe(EExecutionState.ExecutionFailed)
     expect(result?.reason).toBe('Failed because it`s a test')
   })
 })
