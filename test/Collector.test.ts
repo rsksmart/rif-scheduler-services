@@ -28,6 +28,7 @@ describe('Collector', function (this: {
     this.cache = new Cache(this.repository)
   })
 
+  // eslint-disable-next-line max-len
   test('Should collect all transactions with state scheduled until the specified timestamp', async () => {
     const timestamp = addMinutes(new Date(), 30)
 

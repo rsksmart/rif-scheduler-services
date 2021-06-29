@@ -61,12 +61,16 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
       )
 
       this.cache = new Cache(this.repository)
-      const listener = new Listener(listenerRpcUrl, this.setup.rifScheduler.options.address)
+      const listener = new Listener(
+        listenerRpcUrl, this.setup.rifScheduler.options.address
+      )
       if (listener.pollingInterval) {
         listener.pollingInterval = WAIT_MILLISECONDS
       }
 
-      const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.rifScheduler.options.address)
+      const recoverer = new Recoverer(
+        BLOCKCHAIN_HTTP_URL, this.setup.rifScheduler.options.address
+      )
       const batchRecoverer = new BatchRecoverer(recoverer, 10)
       const executor = new ExecutorMock()
       const collector = new Collector(this.repository)
@@ -141,7 +145,9 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
       const currentDate = await this.blockchainDate.now()
       const timestampFuture = addMinutes(currentDate, DIFF_IN_MINUTES)
 
-      const transaction = await this.setup.scheduleTransaction({ plan: 0, timestamp: timestampFuture })
+      const transaction = await this.setup.scheduleTransaction(
+        { plan: 0, timestamp: timestampFuture }
+      )
 
       await time.increase(DIFF_IN_MINUTES * 60)
       await time.advanceBlock()

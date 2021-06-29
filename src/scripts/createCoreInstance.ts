@@ -1,6 +1,8 @@
 import tracer from 'tracer'
 import Core from '../Core'
-import { Recoverer, Collector, IListener, WebSocketListener, PollingListener, Scheduler, Executor, BatchRecoverer } from '../model'
+import {
+  Recoverer, Collector, IListener, WebSocketListener, PollingListener, Scheduler, Executor, BatchRecoverer
+} from '../model'
 import { ScheduledExecution } from '../entities'
 import { Cache, Store, createDbConnection } from '../storage'
 import { BlockchainDate } from '../time'

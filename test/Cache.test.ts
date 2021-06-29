@@ -115,6 +115,7 @@ describe('Cache', function (this: {
       }
     }))?.state
 
+    // eslint-disable-next-line max-len
     await this.cache.changeState(id, EExecutionState.ExecutionFailed, 'Failed because it`s a test')
 
     const result = (await this.repository.findOne({
