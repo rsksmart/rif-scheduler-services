@@ -6,7 +6,7 @@ import { ScheduledTransaction, EMetatransactionState } from '../src/entities'
 import { Cache, Store, createDbConnection } from '../src/storage'
 import { addMinutes } from 'date-fns'
 import Web3 from 'web3'
-import { Recoverer, Collector } from '../src/model'
+import { Recoverer, Collector, BatchRecoverer } from '../src/model'
 import Core from '../src/Core'
 import { ExecutorMock, SchedulerMock } from './mocks'
 import { BlockchainDate } from '../src/time'
@@ -67,13 +67,14 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
       }
 
       const recoverer = new Recoverer(BLOCKCHAIN_HTTP_URL, this.setup.rifScheduler.options.address)
+      const batchRecoverer = new BatchRecoverer(recoverer, 10)
       const executor = new ExecutorMock()
       const collector = new Collector(this.repository)
       const scheduler = new SchedulerMock()
       this.blockchainDate = new BlockchainDate(BLOCKCHAIN_HTTP_URL)
 
       this.core = new Core(
-        recoverer,
+        batchRecoverer,
         listener,
         this.cache,
         collector,
@@ -82,7 +83,7 @@ export function runCoreWith (name: string, Listener: any, listenerRpcUrl: string
         this.blockchainDate,
         new Store(),
         logger,
-        { startFromBlockNumber: 0, blocksChunkSize: 10 }
+        { startFromBlockNumber: 0 }
       )
 
       this.executorExecuteSpied = jest.spyOn(executor, 'execute')

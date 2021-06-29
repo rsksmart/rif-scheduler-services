@@ -1,6 +1,6 @@
 import tracer from 'tracer'
 import Core from '../Core'
-import { Recoverer, Collector, IListener, WebSocketListener, PollingListener, Scheduler, Executor } from '../model'
+import { Recoverer, Collector, IListener, WebSocketListener, PollingListener, Scheduler, Executor, BatchRecoverer } from '../model'
 import { ScheduledTransaction } from '../entities'
 import { Cache, Store, createDbConnection } from '../storage'
 import { BlockchainDate } from '../time'
@@ -40,18 +40,24 @@ export const createCoreInstance = async (environment: Environment) => {
     environment.BLOCKCHAIN_HTTP_URL,
     environment.RIF_SCHEDULER_ADDRESS
   )
+
+  const batchRecoverer = new BatchRecoverer(recoverer, environment.RIF_SCHEDULER_BLOCKS_CHUNK_SIZE)
+
   const executor = new Executor(
     environment.BLOCKCHAIN_HTTP_URL,
     environment.RIF_SCHEDULER_ADDRESS,
     environment.REQUIRED_CONFIRMATIONS,
     environment.MNEMONIC_PHRASE
   )
+
   const collector = new Collector(repository)
+
   const scheduler = new Scheduler(environment.SCHEDULER_CRON_EXPRESSION)
+
   const blockchainDate = new BlockchainDate(environment.BLOCKCHAIN_HTTP_URL)
 
   return new Core(
-    recoverer,
+    batchRecoverer,
     listener,
     cache,
     collector,
@@ -61,7 +67,6 @@ export const createCoreInstance = async (environment: Environment) => {
     new Store(),
     tracer.colorConsole(),
     {
-      startFromBlockNumber: environment.RIF_SCHEDULER_START_FROM_BLOCK_NUMBER,
-      blocksChunkSize: environment.RIF_SCHEDULER_BLOCKS_CHUNK_SIZE
+      startFromBlockNumber: environment.RIF_SCHEDULER_START_FROM_BLOCK_NUMBER
     })
 }

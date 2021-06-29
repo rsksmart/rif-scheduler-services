@@ -1,4 +1,4 @@
-export { Recoverer } from './Recoverer'
+export * from './recoverers'
 export { Collector } from './Collector'
 export * from './listeners'
 export { Scheduler, IScheduler } from './Scheduler'
