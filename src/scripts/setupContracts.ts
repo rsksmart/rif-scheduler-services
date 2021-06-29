@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import { parseBlockchainTimestamp } from '../time'
-import { IMetatransaction } from '../entities'
+import { IExecution } from '../entities'
 import ERC677Data from './contracts/ERC677.json'
 import CounterData from './contracts/Counter.json'
 import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
@@ -34,7 +34,7 @@ export interface ISetup {
   plans: any[];
   scheduleTransaction: (
     scheduleRequest: IScheduleRequest
-  ) => Promise<IMetatransaction>;
+  ) => Promise<IExecution>;
   getExecutionParameters: (
     abi: AbiItem[],
     contractAddress: string,
@@ -181,7 +181,7 @@ export const setupContracts = async (
     executeGas = counterExecutionParameters.executeGas,
     executeValue,
     timestamp
-  }: IScheduleRequest): Promise<IMetatransaction> => {
+  }: IScheduleRequest): Promise<IExecution> => {
     const timestampContract = toBN(Math.floor(+timestamp / 1000))
 
     const approveGas = await token.methods

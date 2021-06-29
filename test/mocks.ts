@@ -1,4 +1,4 @@
-import { IMetatransaction, EMetatransactionState } from '../src/entities'
+import { EExecutionState, IExecution } from '../src/entities'
 import { IExecutor, IScheduler } from '../src/model'
 
 export class SchedulerMock implements IScheduler {
@@ -12,9 +12,9 @@ export class SchedulerMock implements IScheduler {
 
 export class ExecutorMock implements IExecutor {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async execute (transaction: IMetatransaction) {
+  async execute (transaction: IExecution) {
     // do nothing
-    return { tx: '0xMOCKED_TX', state: EMetatransactionState.ExecutionSuccessful }
+    return { tx: '0xMOCKED_TX', state: EExecutionState.ExecutionSuccessful }
   }
 
   async stopEngine () {

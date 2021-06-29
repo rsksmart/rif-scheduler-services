@@ -1,14 +1,14 @@
 import { Repository } from 'typeorm'
-import { IMetatransaction, EMetatransactionState, ScheduledTransaction } from '../entities'
+import { IExecution, EExecutionState, ScheduledExecution } from '../entities'
 
 export class Cache {
-  private repository: Repository<ScheduledTransaction>;
+  private repository: Repository<ScheduledExecution>;
 
-  constructor (repository: Repository<ScheduledTransaction>) {
+  constructor (repository: Repository<ScheduledExecution>) {
     this.repository = repository
   }
 
-  async save (transaction: IMetatransaction): Promise<string> {
+  async save (transaction: IExecution): Promise<string> {
     const cacheTransaction = await this.repository.findOne({
       where: { id: transaction.id }
     })
@@ -16,11 +16,11 @@ export class Cache {
     if (cacheTransaction) return cacheTransaction.id
 
     const scheduledTransaction = await this.repository.save(
-      new ScheduledTransaction(
+      new ScheduledExecution(
         transaction.id,
         transaction.timestamp.toISOString(),
         transaction.blockNumber,
-        EMetatransactionState.Scheduled
+        EExecutionState.Scheduled
       )
     )
 
@@ -38,7 +38,7 @@ export class Cache {
 
   async changeState (
     id: string,
-    state: EMetatransactionState,
+    state: EExecutionState,
     reason?: string
   ): Promise<void> {
     const scheduledTransaction = await this.repository.findOne({
