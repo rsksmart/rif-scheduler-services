@@ -1,9 +1,9 @@
 import Web3 from 'web3'
 import { AbiItem } from 'web3-utils'
 import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
-// eslint-disable-next-line max-len
 import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 import { IExecution, EExecutionState } from '../entities'
+const toBN = Web3.utils.toBN
 
 // HDWallet must be imported with require otherwise npm run build will fail
 // Issue: https://github.com/trufflesuite/truffle/issues/2855
@@ -74,6 +74,22 @@ export class Executor implements IExecutor {
 
   account = () => this.web3.eth.getAccounts().then(accounts => accounts[0])
 
+  getGasLimit = async () => {
+    const account = await this.account()
+
+    const balance = toBN(await this.web3.eth.getBalance(account))
+
+    const gasPrice = toBN(await this.web3.eth.getGasPrice())
+
+    const gasLimit = balance.div(gasPrice)
+
+    const block = await this.web3.eth.getBlock('latest')
+
+    const blockGasLimit = toBN(block.gasLimit)
+
+    return gasLimit.gt(blockGasLimit) ? blockGasLimit : gasLimit
+  }
+
   async execute (transaction: IExecution): Promise<TxResult> {
     let result: Partial<TxResult>
 
@@ -85,9 +101,7 @@ export class Executor implements IExecutor {
 
       const providerAccountAddress = await this.account()
 
-      const executeGas = await this.rifSchedulerContract.methods
-        .execute(id)
-        .estimateGas()
+      const executeGas = await this.getGasLimit()
 
       const tx = await this.rifSchedulerContract.methods
         .execute(id)

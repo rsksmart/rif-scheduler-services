@@ -116,8 +116,8 @@ export const setupContracts = async (
   web3.eth.defaultAccount = accounts.contractAdmin
 
   const plans = [
-    { price: 15, window: 10000, gasLimit: 100000 },
-    { price: 4, window: 300, gasLimit: 10000000 }
+    { price: 15, window: 10000, gasLimit: 10000000 },
+    { price: 15, window: 10000, gasLimit: 10000 } // very low gasLimit
   ]
 
   const tokenTransferGas = await token.methods
@@ -127,13 +127,15 @@ export const setupContracts = async (
     .transfer(accounts.requestor, 100000)
     .send({ from: accounts.contractAdmin, gas: tokenTransferGas })
 
-  const addPlanGas = await rifScheduler.methods
-    .addPlan(plans[0].price, plans[0].window, plans[0].gasLimit, token.options.address)
-    .estimateGas({ from: accounts.serviceProvider })
+  for (const plan of plans) {
+    const addPlanGas = await rifScheduler.methods
+      .addPlan(plan.price, plan.window, plan.gasLimit, token.options.address)
+      .estimateGas({ from: accounts.serviceProvider })
 
-  await rifScheduler.methods
-    .addPlan(plans[0].price, plans[0].window, plans[0].gasLimit, token.options.address)
-    .send({ from: accounts.serviceProvider, gas: addPlanGas })
+    await rifScheduler.methods
+      .addPlan(plan.price, plan.window, plan.gasLimit, token.options.address)
+      .send({ from: accounts.serviceProvider, gas: addPlanGas })
+  }
 
   const getExecutionParameters = async (
     abi: AbiItem[],

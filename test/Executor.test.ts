@@ -9,6 +9,7 @@ import {
 import { BLOCKCHAIN_HTTP_URL, MNEMONIC_PHRASE } from './constants'
 import ERC677Data from '../src/scripts/contracts/ERC677.json'
 import { BlockchainDate } from '../src/time'
+import { EExecutionState } from '../src/entities'
 
 jest.setTimeout(17000)
 
@@ -56,8 +57,37 @@ describe('Executor', function (this: {
     await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
 
     const result = await txExecutor.execute(transaction)
+    const receipt = await this.web3.eth.getTransactionReceipt(result.tx!)
 
-    expect(await this.web3.eth.getTransactionReceipt(result.tx!)).toBeDefined()
+    expect(result.error).not.toBeDefined()
+    expect(result.state).toBe(EExecutionState.ExecutionSuccessful)
+    expect(receipt).toBeDefined()
+  })
+
+  test('Execute with low gasLimit should return ExecutionFailed state', async () => {
+    const CONFIRMATIONS_REQUIRED = 1
+
+    const currentDate = await this.blockchainDate.now()
+    const timestamp = addMinutes(currentDate, 5)
+
+    const transaction = await this.setup.scheduleTransaction({ plan: 1, timestamp }) // plan 1, gasLimit 10.000
+
+    const txExecutor = new Executor(
+      BLOCKCHAIN_HTTP_URL,
+      this.setup.rifScheduler.options.address,
+      CONFIRMATIONS_REQUIRED,
+      MNEMONIC_PHRASE
+    )
+
+    const currentBlockNumber = await this.web3.eth.getBlockNumber()
+    await time.advanceBlockTo(currentBlockNumber + CONFIRMATIONS_REQUIRED)
+
+    const result = await txExecutor.execute(transaction)
+    const receipt = await this.web3.eth.getTransactionReceipt(result.tx!)
+
+    expect(result.error).not.toBeDefined()
+    expect(result.state).toBe(EExecutionState.ExecutionFailed)
+    expect(receipt).toBeDefined()
   })
 
   test(
