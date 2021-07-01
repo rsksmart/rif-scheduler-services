@@ -101,8 +101,9 @@ describe('Executor', function (this: {
 
     await txExecutor.execute(transaction)
 
-    const result = await txExecutor.execute(transaction)
-    expect(result.error!.message).toEqual('State must be Scheduled')
+    const result2 = await txExecutor.execute(transaction)
+
+    expect(result2.error!.message).toEqual('State must be Scheduled')
   })
 
   test('Should execute a some other contract scheduled', async () => {

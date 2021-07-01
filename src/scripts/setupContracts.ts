@@ -5,7 +5,6 @@ import { IExecution } from '../entities'
 import ERC677Data from './contracts/ERC677.json'
 import CounterData from './contracts/Counter.json'
 import RIFSchedulerData from '@rsksmart/rif-scheduler-contracts/RIFScheduler.json'
-// eslint-disable-next-line max-len
 import { RIFScheduler } from '@rsksmart/rif-scheduler-contracts/types/web3-v1-contracts/RIFScheduler'
 import { deployContract } from './utils'
 
@@ -66,7 +65,7 @@ export const deployAllContracts = async (web3: Web3) => {
     web3,
     RIFSchedulerData.abi as AbiItem[],
     RIFSchedulerData.bytecode,
-    [accounts.serviceProvider, accounts.payee]
+    [accounts.serviceProvider, accounts.payee, 15]
   )) as any as RIFScheduler
 
   return {
@@ -117,8 +116,8 @@ export const setupContracts = async (
   web3.eth.defaultAccount = accounts.contractAdmin
 
   const plans = [
-    { price: 15, window: 10000 },
-    { price: 4, window: 300 }
+    { price: 15, window: 10000, gasLimit: 100000 },
+    { price: 4, window: 300, gasLimit: 10000000 }
   ]
 
   const tokenTransferGas = await token.methods
@@ -129,11 +128,11 @@ export const setupContracts = async (
     .send({ from: accounts.contractAdmin, gas: tokenTransferGas })
 
   const addPlanGas = await rifScheduler.methods
-    .addPlan(plans[0].price, plans[0].window, token.options.address)
+    .addPlan(plans[0].price, plans[0].window, plans[0].gasLimit, token.options.address)
     .estimateGas({ from: accounts.serviceProvider })
 
   await rifScheduler.methods
-    .addPlan(plans[0].price, plans[0].window, token.options.address)
+    .addPlan(plans[0].price, plans[0].window, plans[0].gasLimit, token.options.address)
     .send({ from: accounts.serviceProvider, gas: addPlanGas })
 
   const getExecutionParameters = async (
@@ -178,7 +177,6 @@ export const setupContracts = async (
     plan = 0,
     executeAddress = counterAddress,
     executeMethod = counterExecutionParameters.executeMethod,
-    executeGas = counterExecutionParameters.executeGas,
     executeValue,
     timestamp
   }: IScheduleRequest): Promise<IExecution> => {
@@ -203,7 +201,6 @@ export const setupContracts = async (
         plan,
         executeAddress,
         executeMethod,
-        executeGas,
         timestampContract
       )
       .estimateGas({ from: accounts.requestor })
@@ -212,7 +209,6 @@ export const setupContracts = async (
         plan,
         executeAddress,
         executeMethod,
-        executeGas,
         timestampContract
       )
       .send({
