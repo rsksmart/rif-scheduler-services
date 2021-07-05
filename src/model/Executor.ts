@@ -74,6 +74,14 @@ export class Executor implements IExecutor {
 
   account = () => this.web3.eth.getAccounts().then(accounts => accounts[0])
 
+  private async estimate (id: string) {
+    const executeGas = await this.rifSchedulerContract.methods
+      .execute(id)
+      .estimateGas()
+
+    return executeGas
+  }
+
   async execute (transaction: IExecution): Promise<TxResult> {
     let result: Partial<TxResult>
 
@@ -85,9 +93,7 @@ export class Executor implements IExecutor {
 
       const providerAccountAddress = await this.account()
 
-      const executeGas = await this.rifSchedulerContract.methods
-        .execute(id)
-        .estimateGas()
+      const executeGas = await this.estimate(id)
 
       const tx = await this.rifSchedulerContract.methods
         .execute(id)
