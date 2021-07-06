@@ -23,7 +23,7 @@ export const setupDemo = async ({
 
   // Schedule counter.inc() to be executed within 5 minutes.
   const currentDate = await new BlockchainDate(BLOCKCHAIN_HTTP_URL).now()
-  const firstDate = addMinutes(currentDate, 5)
+  const firstDate = addMinutes(currentDate, 15)
   for (let i = 0; i < 3; i++) {
     await setup.scheduleTransaction({ plan: 0, timestamp: addSeconds(firstDate, i) })
   }

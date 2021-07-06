@@ -92,6 +92,14 @@ export const getAccounts = async (web3: Web3) => {
   return accounts
 }
 
+export interface IPlanResponse {
+  pricePerExecution: BN,
+  window: number,
+  gasLimit: BN,
+  token: string,
+  active: boolean
+}
+
 export const setupContracts = async (
   web3: Web3,
   tokenAddress: string,
@@ -115,26 +123,46 @@ export const setupContracts = async (
 
   web3.eth.defaultAccount = accounts.contractAdmin
 
-  const plans = [
-    { price: 15, window: 10000, gasLimit: 10000000 },
-    { price: 15, window: 10000, gasLimit: 1000 } // low gas
-  ]
+  const plansCount = await rifScheduler.methods
+    .plansCount()
+    .call()
 
-  const tokenTransferGas = await token.methods
-    .transfer(accounts.requestor, 100000)
-    .estimateGas({ from: accounts.contractAdmin })
-  await token.methods
-    .transfer(accounts.requestor, 100000)
-    .send({ from: accounts.contractAdmin, gas: tokenTransferGas })
+  const plans: IPlanResponse[] = []
 
-  for (const plan of plans) {
-    const addPlanGas = await rifScheduler.methods
-      .addPlan(plan.price, plan.window, plan.gasLimit, token.options.address)
-      .estimateGas({ from: accounts.serviceProvider })
+  if (toBN(plansCount).gt(toBN(0))) {
+    for (let index = 0; index < toBN(plansCount).toNumber(); index++) {
+      const plan = await rifScheduler.methods
+        .plans(index)
+        .call()
 
-    await rifScheduler.methods
-      .addPlan(plan.price, plan.window, plan.gasLimit, token.options.address)
-      .send({ from: accounts.serviceProvider, gas: addPlanGas })
+      plans.push({
+        active: plan.active,
+        gasLimit: toBN(plan.gasLimit),
+        pricePerExecution: toBN(plan.pricePerExecution),
+        token: plan.token,
+        window: toBN(plan.window).toNumber()
+      })
+    }
+  } else {
+    plans.push({ pricePerExecution: toBN(15), window: 10000, gasLimit: toBN(10000000), active: true, token: '' })
+    plans.push({ pricePerExecution: toBN(15), window: 10000, gasLimit: toBN(1000), active: true, token: '' }) // low gas
+
+    const tokenTransferGas = await token.methods
+      .transfer(accounts.requestor, 100000)
+      .estimateGas({ from: accounts.contractAdmin })
+    await token.methods
+      .transfer(accounts.requestor, 100000)
+      .send({ from: accounts.contractAdmin, gas: tokenTransferGas })
+
+    for (const plan of plans) {
+      const addPlanGas = await rifScheduler.methods
+        .addPlan(plan.pricePerExecution, plan.window, plan.gasLimit, token.options.address)
+        .estimateGas({ from: accounts.serviceProvider })
+
+      await rifScheduler.methods
+        .addPlan(plan.pricePerExecution, plan.window, plan.gasLimit, token.options.address)
+        .send({ from: accounts.serviceProvider, gas: addPlanGas })
+    }
   }
 
   const getExecutionParameters = async (
@@ -185,10 +213,10 @@ export const setupContracts = async (
     const timestampContract = toBN(Math.floor(+timestamp / 1000))
 
     const approveGas = await token.methods
-      .approve(rifScheduler.options.address, plans[plan].price)
+      .approve(rifScheduler.options.address, plans[plan].pricePerExecution)
       .estimateGas({ from: accounts.requestor })
     await token.methods
-      .approve(rifScheduler.options.address, plans[plan].price)
+      .approve(rifScheduler.options.address, plans[plan].pricePerExecution)
       .send({ from: accounts.requestor, gas: approveGas })
 
     const purchaseGas = await rifScheduler.methods

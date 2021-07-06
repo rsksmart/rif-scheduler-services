@@ -4,8 +4,9 @@ import {
   Recoverer, Collector, IListener, WebSocketListener, PollingListener, Scheduler, Executor, BatchRecoverer
 } from '../model'
 import { ScheduledExecution } from '../entities'
-import { Cache, Store, createDbConnection } from '../storage'
+import { Cache, Store } from '../storage'
 import { BlockchainDate } from '../time'
+import { Repository } from 'typeorm'
 
 export type Environment = {
   DB_NAME: string
@@ -18,14 +19,11 @@ export type Environment = {
   COUNTER_ADDRESS: string
   TOKEN_ADDRESS: string
   MNEMONIC_PHRASE: string
-  SCHEDULER_CRON_EXPRESSION: string
+  SCHEDULER_CRON_EXPRESSION: string,
+  API_PORT: number
 }
 
-export const createCoreInstance = async (environment: Environment) => {
-  const dbConnection = await createDbConnection(environment.DB_NAME)
-
-  const repository = dbConnection.getRepository(ScheduledExecution)
-
+export const createCoreInstance = async (environment: Environment, repository: Repository<ScheduledExecution>) => {
   const cache = new Cache(repository)
   let listener: IListener = new PollingListener(
     environment.BLOCKCHAIN_HTTP_URL,
