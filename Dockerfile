@@ -10,4 +10,9 @@ RUN npm i
 COPY ./src ./src
 COPY ./tsconfig.json ./
 
-CMD [ "npm", "run", "start:prod"]
+RUN npm run build:prod
+
+RUN chown -R node: /app
+USER node
+
+CMD ["npm", "run", "start:prod"]
