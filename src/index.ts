@@ -1,4 +1,7 @@
+import startApi from './api'
+import { ScheduledExecution } from './entities'
 import { createCoreInstance, Environment, setupDemo } from './scripts'
+import { createDbConnection } from './storage'
 
 require('dotenv').config()
 
@@ -15,17 +18,24 @@ const environment: Environment = {
   COUNTER_ADDRESS: process.env.COUNTER_ADDRESS as string,
   TOKEN_ADDRESS: process.env.TOKEN_ADDRESS as string,
   MNEMONIC_PHRASE: process.env.MNEMONIC_PHRASE as string,
-  SCHEDULER_CRON_EXPRESSION: process.env.SCHEDULER_CRON_EXPRESSION as string
+  SCHEDULER_CRON_EXPRESSION: process.env.SCHEDULER_CRON_EXPRESSION as string,
+  API_PORT: parseInt(process.env.API_PORT as string)
 }
 
 const init = async () => {
-  const core = await createCoreInstance(environment)
+  const dbConnection = await createDbConnection(environment.DB_NAME)
+
+  const repository = dbConnection.getRepository(ScheduledExecution)
+
+  const core = await createCoreInstance(environment, repository)
 
   if (process.argv.includes('--demo')) {
     await setupDemo(environment)
   }
 
   core.start()
+
+  startApi(environment, repository)
 }
 
 init()

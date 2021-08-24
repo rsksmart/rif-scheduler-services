@@ -3,6 +3,7 @@ import { addMinutes } from 'date-fns'
 import { ScheduledExecution, EExecutionState } from '../src/entities'
 import { Cache, createDbConnection } from '../src/storage'
 import { deleteDatabase, resetDatabase } from './utils'
+import getTransactionHashByExecutionId from '../src/api/getTransactionHashByExecutionId'
 
 jest.setTimeout(7000)
 
@@ -129,5 +130,49 @@ describe('Cache', function (this: {
     expect(initialState).not.toBe(result?.state)
     expect(result?.state).toBe(EExecutionState.ExecutionFailed)
     expect(result?.reason).toBe('Failed because it`s a test')
+  })
+
+  test('[getTransactionHashByExecutionId] Should return a transactionHash with state successful', async () => {
+    const date = addMinutes(new Date(), -2)
+    const id = 'hashedid'
+
+    await this.cache.save({
+      id,
+      timestamp: date,
+      blockNumber: 1
+    })
+
+    const txHash = '0x0...'
+
+    await this.cache.changeState(id, EExecutionState.ExecutionSuccessful, txHash)
+
+    const count = await this.repository.count()
+
+    const transactionHash = await getTransactionHashByExecutionId(this.repository, id)
+
+    expect(count).toBe(1)
+    expect(transactionHash).toBe(txHash)
+  })
+
+  test('[getTransactionHashByExecutionId] Should return undefined with state different than successful', async () => {
+    const date = addMinutes(new Date(), -2)
+    const id = 'hashedid'
+
+    await this.cache.save({
+      id,
+      timestamp: date,
+      blockNumber: 1
+    })
+
+    const txHash = '0x0...'
+
+    await this.cache.changeState(id, EExecutionState.Cancelled, txHash)
+
+    const count = await this.repository.count()
+
+    const transactionHash = await getTransactionHashByExecutionId(this.repository, id)
+
+    expect(count).toBe(1)
+    expect(transactionHash).not.toBeDefined()
   })
 })
