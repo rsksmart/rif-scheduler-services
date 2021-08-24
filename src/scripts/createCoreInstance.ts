@@ -19,7 +19,16 @@ export type Environment = {
   TOKEN_ADDRESS: string
   MNEMONIC_PHRASE: string
   SCHEDULER_CRON_EXPRESSION: string
+  LOG_FILE: boolean
 }
+
+const loggerConsole = tracer.colorConsole()
+const loggerFile = tracer.dailyfile({
+  root: './storage/logs',
+  maxLogFiles: 10,
+  allLogsFileName: 'log',
+  level: 0
+})
 
 export const createCoreInstance = async (environment: Environment) => {
   const dbConnection = await createDbConnection(environment.DB_NAME)
@@ -58,6 +67,8 @@ export const createCoreInstance = async (environment: Environment) => {
 
   const blockchainDate = new BlockchainDate(environment.BLOCKCHAIN_HTTP_URL)
 
+  const logger = environment.LOG_FILE ? loggerFile : loggerConsole
+
   return new Core(
     batchRecoverer,
     listener,
@@ -67,7 +78,7 @@ export const createCoreInstance = async (environment: Environment) => {
     scheduler,
     blockchainDate,
     new Store(),
-    tracer.colorConsole(),
+    logger,
     {
       startFromBlockNumber: environment.RIF_SCHEDULER_START_FROM_BLOCK_NUMBER
     })

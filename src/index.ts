@@ -15,7 +15,8 @@ const environment: Environment = {
   COUNTER_ADDRESS: process.env.COUNTER_ADDRESS as string,
   TOKEN_ADDRESS: process.env.TOKEN_ADDRESS as string,
   MNEMONIC_PHRASE: process.env.MNEMONIC_PHRASE as string,
-  SCHEDULER_CRON_EXPRESSION: process.env.SCHEDULER_CRON_EXPRESSION as string
+  SCHEDULER_CRON_EXPRESSION: process.env.SCHEDULER_CRON_EXPRESSION as string,
+  LOG_FILE: process.env.LOG_FILE as string === 'true'
 }
 
 const init = async () => {
